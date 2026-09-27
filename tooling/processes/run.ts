@@ -4,7 +4,7 @@
  * deadlines with SIGTERM→SIGKILL escalation, and AbortSignal cancellation.
  * JSON control records use stdout; logs go to stderr.
  */
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 
 export interface RunProcessOptions {
   readonly argv: readonly string[];
@@ -71,7 +71,8 @@ export function buildArgv(spec: ArgvSpec): string[] {
 
 export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
   const { argv, cwd, env, timeoutMs, signal } = options;
-  if (argv.length === 0 || argv[0] === undefined || argv[0].length === 0) {
+  const executable = argv[0];
+  if (executable === undefined || executable.length === 0) {
     throw new Error('argv must name an executable');
   }
   const maxBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
@@ -79,9 +80,9 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
   const startedAt = Date.now();
 
   return new Promise<ProcessResult>((resolve, reject) => {
-    let child;
+    let child: ChildProcess;
     try {
-      child = spawn(argv[0], argv.slice(1), {
+      child = spawn(executable, argv.slice(1), {
         shell: false,
         cwd,
         env: env ?? process.env,
@@ -171,8 +172,8 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
         clearTimeout(timeout);
       }
       signal?.removeEventListener('abort', onAbort);
-      reject(new Error(`spawn ${argv[0]} failed: ${error.message}`));
+      reject(new Error(`spawn ${executable} failed: ${error.message}`));
     });
-    child.on('close', (code) => finish(code));
+    child.on('close', (code: number | null) => finish(code));
   });
 }
