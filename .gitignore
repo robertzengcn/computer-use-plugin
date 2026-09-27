@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+out/
+coverage/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+
+# Weights and native build outputs are never committed (design §2)
+*.onnx
+*.onnx.data
+*.safetensors
+*.gguf
+
+# Local caches / credentials
+.cache/
+.env
+.env.*

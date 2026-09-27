@@ -1,0 +1,36 @@
+{
+  "name": "aifetchly-computer-use",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Computer Use plugin repository: contracts, desktop backend artifacts, model exports, fixtures and evaluation tooling consumed by AiFetchly.",
+  "packageManager": "npm@10.9.3",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "check": "eslint . && tsc --noEmit && vitest run",
+    "coverage": "vitest run --coverage",
+    "build": "tsc",
+    "contracts:check": "node dist/tooling/cli.js contracts:check",
+    "contracts:build": "node dist/tooling/cli.js contracts:build",
+    "backend:prepare": "node dist/tooling/cli.js backend:prepare",
+    "backend:test": "node dist/tooling/cli.js backend:test",
+    "model:prepare": "node dist/tooling/cli.js model:prepare",
+    "model:export": "node dist/tooling/cli.js model:export",
+    "model:parity": "node dist/tooling/cli.js model:parity",
+    "eval": "node dist/eval/cli.js",
+    "package:build": "node dist/tooling/cli.js package:build",
+    "release:verify": "node dist/tooling/cli.js release:verify"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "ajv": "^8.17.0",
+    "eslint": "^9.17.0",
+    "json-schema-to-typescript": "^15.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^3.0.0"
+  }
+}
