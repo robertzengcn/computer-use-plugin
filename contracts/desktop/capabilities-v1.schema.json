@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json",
+  "title": "Desktop backend capabilities",
+  "description": "Backend/protocol versions, supported actions, permissions, grounder state and planner mode reported by computer_capabilities (design §3.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "backendVersion",
+    "protocolVersion",
+    "contractVersion",
+    "supportedActions",
+    "permissions",
+    "plannerMode",
+    "displaySupport"
+  ],
+  "properties": {
+    "backendVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "protocolVersion": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "contractVersion": { "type": "integer", "minimum": 1 },
+    "supportedActions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["click", "type", "scroll", "move", "drag", "keys", "key"]
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accessibility", "screenRecording", "inputMonitoring"],
+      "properties": {
+        "accessibility": { "$ref": "#/$defs/permissionState" },
+        "screenRecording": { "$ref": "#/$defs/permissionState" },
+        "inputMonitoring": { "$ref": "#/$defs/permissionState" }
+      }
+    },
+    "plannerMode": {
+      "type": "string",
+      "enum": ["local_only", "visual_planner"]
+    },
+    "displaySupport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["multiMonitor", "mixedDpi"],
+      "properties": {
+        "multiMonitor": { "type": "boolean" },
+        "mixedDpi": { "type": "boolean" }
+      }
+    },
+    "grounder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "provider"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["not_installed", "installing", "ready", "unavailable"]
+        },
+        "provider": { "type": "string", "maxLength": 128 }
+      }
+    }
+  },
+  "$defs": {
+    "permissionState": {
+      "type": "string",
+      "enum": ["granted", "denied", "not_determined", "unsupported_platform"]
+    }
+  }
+}

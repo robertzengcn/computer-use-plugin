@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
+  "title": "Desktop observation",
+  "description": "Structured observation returned by computer_observe: metadata plus bounded window/AX state (design §3.2, §3.5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["metadata", "state"],
+  "properties": {
+    "metadata": { "$ref": "#/$defs/observationMetadata" },
+    "state": { "$ref": "#/$defs/observationState" }
+  },
+  "$defs": {
+    "observationMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sessionId",
+        "sessionGeneration",
+        "capturedAt",
+        "targetWindowId",
+        "displayConfigurationVersion",
+        "executorUnits",
+        "captureWidthPx",
+        "captureHeightPx",
+        "plannerMode",
+        "plannerImageAttached",
+        "imageSha256"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "sessionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "sessionGeneration": { "type": "integer", "minimum": 0 },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "targetWindowId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "displayConfigurationVersion": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "executorUnits": {
+          "type": "string",
+          "enum": ["desktop_physical_pixels", "desktop_logical_points"]
+        },
+        "captureWidthPx": { "type": "integer", "minimum": 1, "maximum": 32768 },
+        "captureHeightPx": { "type": "integer", "minimum": 1, "maximum": 32768 },
+        "plannerMode": {
+          "type": "string",
+          "enum": ["local_only", "visual_planner"]
+        },
+        "plannerImageAttached": { "type": "boolean" },
+        "imageSha256": { "$ref": "#/$defs/sha256Hex" },
+        "downsampling": {
+          "$comment": "Optional explicit description when the capture was resized (design §3.5).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["originalWidthPx", "originalHeightPx", "method"],
+          "properties": {
+            "originalWidthPx": { "type": "integer", "minimum": 1 },
+            "originalHeightPx": { "type": "integer", "minimum": 1 },
+            "method": { "type": "string", "enum": ["none", "lanczos", "bilinear", "area", "unknown"] }
+          }
+        }
+      }
+    },
+    "observationState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["windows"],
+      "properties": {
+        "windows": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/windowRecord" }
+        },
+        "focusedWindowId": { "type": "string", "maxLength": 256 },
+        "foregroundOwner": { "type": "string", "maxLength": 256 },
+        "axTree": { "$ref": "#/$defs/axTree" }
+      }
+    },
+    "windowRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "processId", "frame"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "title": { "type": "string", "maxLength": 200 },
+        "processId": { "type": "integer", "minimum": 0 },
+        "processName": { "type": "string", "maxLength": 200 },
+        "frame": { "$ref": "#/$defs/rect" }
+      }
+    },
+    "axTree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["elementCount", "truncated", "elements"],
+      "properties": {
+        "elementCount": { "type": "integer", "minimum": 0, "maximum": 5000 },
+        "truncated": {
+          "type": "boolean",
+          "$comment": "Must be true when traversal stopped at depth/element bounds; silent truncation is forbidden (design §4.2)."
+        },
+        "elements": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role"],
+            "properties": {
+              "role": { "type": "string", "maxLength": 64 },
+              "name": { "type": "string", "maxLength": 500 },
+              "value": { "type": "string", "maxLength": 2000 },
+              "frame": { "$ref": "#/$defs/rect" },
+              "children": { "type": "array", "maxItems": 200, "items": { "type": "integer" } }
+            }
+          }
+        }
+      }
+    },
+    "rect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

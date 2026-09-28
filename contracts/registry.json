@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "description": "Packaged local schema registry. $ref resolution goes through this map only; network resolution is prohibited (design §3.7).",
+  "schemas": [
+    { "$id": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json", "path": "desktop/error-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json", "path": "desktop/capabilities-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json", "path": "desktop/observation-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json", "path": "desktop/action-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json", "path": "tools/public-tools-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/tools/plugin-manifest-v1.json", "path": "tools/plugin-manifest-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/grounding/capabilities-v1.json", "path": "grounding/capabilities-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json", "path": "grounding/request-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json", "path": "grounding/result-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json", "path": "models/model-manifest-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/traces/trace-manifest-v1.json", "path": "traces/trace-manifest-v1.schema.json" },
+    { "$id": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json", "path": "fixtures/transforms/transforms-v1.schema.json" }
+  ]
+}

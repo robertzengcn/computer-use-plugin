@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/traces/trace-manifest-v1.json",
+  "title": "Trace bundle manifest",
+  "description": "Index of a trace bundle (design §3.6). Typed content is redacted by default; consent must be explicit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "traceId",
+    "contractVersions",
+    "target",
+    "plannerMode",
+    "steps",
+    "redacted"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "traceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "contractVersions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tools", "desktop", "grounding"],
+      "properties": {
+        "tools": { "type": "integer", "minimum": 1 },
+        "desktop": { "type": "integer", "minimum": 1 },
+        "grounding": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modelConfigurationId", "preprocessingRevision", "decodingRevision", "calibrationRevision"],
+      "properties": {
+        "modelConfigurationId": { "type": "string", "maxLength": 256 },
+        "adapterId": { "type": "string", "maxLength": 128 },
+        "adapterVersion": { "type": "string", "maxLength": 64 },
+        "onnxRuntimeVersion": { "type": "string", "maxLength": 32 },
+        "executionProvider": { "type": "string", "enum": ["dml", "coreml", "cpu"] },
+        "preprocessingRevision": { "type": "string", "maxLength": 64 },
+        "decodingRevision": { "type": "string", "maxLength": 64 },
+        "calibrationRevision": { "type": "string", "maxLength": 64 },
+        "modelManifestSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "$comment": "Replay requires matching identities; unavailable versions fail explicitly without substituting (design §3.6)."
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consent"],
+      "properties": {
+        "windowTitle": { "type": "string", "maxLength": 200 },
+        "appId": { "type": "string", "maxLength": 256 },
+        "os": { "type": "string", "maxLength": 64 },
+        "displayMetadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scaling"],
+          "properties": {
+            "scaling": { "type": "number", "exclusiveMinimum": 0 },
+            "locale": { "type": "string", "maxLength": 32 },
+            "theme": { "type": "string", "maxLength": 32 }
+          }
+        },
+        "consent": {
+          "type": "boolean",
+          "$comment": "Explicit synthetic-or-reviewed consent classification; default false at the record level is not enough (CU-PLUGIN-11)."
+        }
+      }
+    },
+    "plannerMode": { "type": "string", "enum": ["local_only", "visual_planner"] },
+    "steps": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stepId"],
+        "properties": {
+          "stepId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "observation": { "type": "string", "maxLength": 512 },
+          "grounding": { "type": "string", "maxLength": 512 },
+          "action": { "type": "string", "maxLength": 512 },
+          "verification": { "type": "string", "maxLength": 512 }
+        }
+      }
+    },
+    "annotations": { "type": "string", "maxLength": 512 },
+    "redacted": {
+      "type": "boolean",
+      "$comment": "Typed content (lead text, screenshots) is redacted by default; original captures are opt-in."
+    }
+  }
+}

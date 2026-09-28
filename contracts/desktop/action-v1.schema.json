@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json",
+  "title": "Atomic desktop action and outcome",
+  "description": "Model-visible act payload uses opaque target handles only — raw desktop coordinates exist solely inside the supervisor (design §3.1, CU-PLUGIN-02).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actionId", "action"],
+  "properties": {
+    "actionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sessionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "action": { "$ref": "#/$defs/typedAction" },
+    "outcome": { "$ref": "#/$defs/actionOutcome" }
+  },
+  "$defs": {
+    "targetHandle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "$comment": "Opaque handle minted by the host from a resolved target; never coordinates."
+    },
+    "typedAction": {
+      "oneOf": [
+        { "$ref": "#/$defs/clickAction" },
+        { "$ref": "#/$defs/typeAction" },
+        { "$ref": "#/$defs/scrollAction" },
+        { "$ref": "#/$defs/moveAction" },
+        { "$ref": "#/$defs/dragAction" },
+        { "$ref": "#/$defs/keysAction" }
+      ]
+    },
+    "clickAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "targetHandle"],
+      "properties": {
+        "kind": { "const": "click" },
+        "targetHandle": { "$ref": "#/$defs/targetHandle" },
+        "button": { "type": "string", "enum": ["left", "right", "middle"], "default": "left" },
+        "count": { "type": "integer", "minimum": 1, "maximum": 3, "default": 1 }
+      }
+    },
+    "typeAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "text"],
+      "properties": {
+        "kind": { "const": "type" },
+        "targetHandle": { "$ref": "#/$defs/targetHandle" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 10000 }
+      }
+    },
+    "scrollAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "targetHandle", "direction", "amount"],
+      "properties": {
+        "kind": { "const": "scroll" },
+        "targetHandle": { "$ref": "#/$defs/targetHandle" },
+        "direction": { "type": "string", "enum": ["up", "down", "left", "right"] },
+        "amount": { "type": "integer", "minimum": 1, "maximum": 100 }
+      }
+    },
+    "moveAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "targetHandle"],
+      "properties": {
+        "kind": { "const": "move" },
+        "targetHandle": { "$ref": "#/$defs/targetHandle" }
+      }
+    },
+    "dragAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "fromHandle", "toHandle"],
+      "properties": {
+        "kind": { "const": "drag" },
+        "fromHandle": { "$ref": "#/$defs/targetHandle" },
+        "toHandle": { "$ref": "#/$defs/targetHandle" }
+      }
+    },
+    "keysAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "combo"],
+      "properties": {
+        "kind": { "const": "keys" },
+        "targetHandle": { "$ref": "#/$defs/targetHandle" },
+        "combo": { "type": "string", "minLength": 1, "maxLength": 50 }
+      }
+    },
+    "actionOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actionId", "state", "verification"],
+      "properties": {
+        "actionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "state": {
+          "type": "string",
+          "enum": ["not_dispatched", "dispatched", "failed", "uncertain"],
+          "$comment": "uncertain: dispatch could not be ruled out (e.g. connection lost during input); never auto-retried (design §6.1)."
+        },
+        "verification": {
+          "type": "string",
+          "enum": ["satisfied", "unsatisfied", "unknown"]
+        },
+        "postObservationId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "errorCode": {
+          "$ref": "../desktop/error-v1.json#/$defs/errorCode"
+        },
+        "dispatchedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

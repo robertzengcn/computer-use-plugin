@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+  "title": "Desktop backend error",
+  "description": "Stable error contract for desktop backends and public tools (design §3.3). Safe messages only: no tracebacks, secrets, image bytes, absolute paths or argv.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["errorCode", "message", "stage", "retryClass", "correlationId"],
+  "properties": {
+    "errorCode": { "$ref": "#/$defs/errorCode" },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "$comment": "Safe, user-presentable message. Tokens may not start with an absolute path or Windows drive root.",
+      "not": { "pattern": "(^|\\s)(/|\\\\|[A-Za-z]:[\\\\/])" }
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["startup", "initialization", "readiness", "observation", "grounding", "dispatch", "completion", "cancellation", "shutdown"]
+    },
+    "retryClass": {
+      "type": "string",
+      "enum": ["none", "retry_same", "retry_after_reobserve", "handoff"]
+    },
+    "correlationId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "reason": {
+      "$comment": "Required on unsupported_target (design §3.3).",
+      "type": "string",
+      "enum": ["elevated_window", "own_window", "protected_view", "unsupported_app", "unsupported_display"]
+    },
+    "readiness": {
+      "$comment": "Required on model_not_ready; the host GroundingReadiness value.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "errorCode": { "const": "unsupported_target" } } },
+      "then": { "required": ["reason"] }
+    },
+    {
+      "if": { "properties": { "errorCode": { "const": "model_not_ready" } } },
+      "then": { "required": ["readiness"] }
+    }
+  ],
+  "$defs": {
+    "errorCode": {
+      "type": "string",
+      "enum": [
+        "ai_disabled",
+        "permission_required",
+        "desktop_busy",
+        "unsupported_target",
+        "unsupported_display_configuration",
+        "runtime_not_ready",
+        "model_not_ready",
+        "target_not_found",
+        "target_ambiguous",
+        "invalid_grounding_output",
+        "stale_observation",
+        "focus_changed",
+        "action_not_authorized",
+        "action_cancelled",
+        "execution_uncertain",
+        "verification_failed",
+        "backend_unavailable",
+        "resource_limit",
+        "protocol_mismatch",
+        "planner_mode_unavailable",
+        "stop_hotkey_unavailable",
+        "host_elevated"
+      ]
+    }
+  }
+}

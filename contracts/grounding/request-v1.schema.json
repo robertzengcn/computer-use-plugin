@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
+  "title": "Grounding request",
+  "description": "Envelope, image reference and task for a ground() call (design §3.4.2). The adapter never receives or returns desktop coordinates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "requestId", "sessionGeneration", "observationId", "modelConfigurationId", "image", "task"],
+  "properties": {
+    "contractVersion": { "const": 1 },
+    "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sessionGeneration": { "type": "integer", "minimum": 0 },
+    "observationId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "modelConfigurationId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "image": { "$ref": "#/$defs/requestImage" },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "maxCandidates": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "pixelBudget": { "type": "integer", "minimum": 1, "maximum": 67108864 }
+      }
+    }
+  },
+  "$defs": {
+    "requestImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "widthPx", "heightPx"],
+      "properties": {
+        "format": { "type": "string", "enum": ["png", "jpeg"] },
+        "widthPx": { "type": "integer", "minimum": 1, "maximum": 32768 },
+        "heightPx": { "type": "integer", "minimum": 1, "maximum": 32768 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "crop": {
+          "$comment": "Optional crop in capture pixels with an explicit origin; bounds checked against the declared dimensions.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "w", "h"],
+          "properties": {
+            "x": { "type": "integer", "minimum": 0 },
+            "y": { "type": "integer", "minimum": 0 },
+            "w": { "type": "integer", "exclusiveMinimum": 0 },
+            "h": { "type": "integer", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

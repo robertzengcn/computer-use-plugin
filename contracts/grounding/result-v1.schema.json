@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+  "title": "Grounding result",
+  "description": "Either candidates or a typed failure. Candidate geometry is finite and lives in explicitly declared capture_pixels or model_input_pixels — never desktop coordinates (design §3.4.2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "requestId", "sessionGeneration", "observationId", "modelConfigurationId"],
+  "properties": {
+    "contractVersion": { "const": 1 },
+    "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sessionGeneration": { "type": "integer", "minimum": 0 },
+    "observationId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "modelConfigurationId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "candidates": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "preprocessing": { "$ref": "#/$defs/preprocessingEvidence" },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "failure": { "$ref": "#/$defs/typedFailure" }
+  },
+  "allOf": [
+    {
+      "$comment": "A result carries candidates or a failure, never both and never neither.",
+      "oneOf": [
+        { "required": ["candidates"], "not": { "required": ["failure"] } },
+        { "required": ["failure"], "not": { "required": ["candidates"] } }
+      ]
+    },
+    {
+      "$comment": "Candidates require preprocessing evidence so the host can validate the transform path (design §3.4.2).",
+      "if": { "required": ["candidates"] },
+      "then": { "required": ["preprocessing"] }
+    }
+  ],
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["geometry", "coordinateSpace", "imageDimensions", "scores"],
+      "properties": {
+        "geometry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["point"],
+          "properties": {
+            "point": { "$ref": "#/$defs/finitePoint" },
+            "region": { "$ref": "#/$defs/finiteRegion" }
+          }
+        },
+        "coordinateSpace": {
+          "type": "string",
+          "enum": ["capture_pixels", "model_input_pixels"],
+          "$comment": "desktop_physical_pixels and desktop_logical_points are intentionally absent; the supervisor owns executor units."
+        },
+        "imageDimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["widthPx", "heightPx"],
+          "properties": {
+            "widthPx": { "type": "integer", "minimum": 1 },
+            "heightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "scores": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "value", "semantics", "version"],
+            "properties": {
+              "name": { "type": "string", "maxLength": 64 },
+              "value": { "type": "number" },
+              "semantics": {
+                "type": "string",
+                "enum": ["attention_activation", "region_mean_activation", "calibrated_probability", "diagnostic_raw"]
+              },
+              "version": { "type": "string", "maxLength": 32 },
+              "$comment": "No assumed cross-model confidence scale (design §3.4.2)."
+            }
+          }
+        }
+      }
+    },
+    "finitePoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 }
+      }
+    },
+    "finiteRegion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "preprocessingEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modelInputDimensions", "transformToCapture"],
+      "properties": {
+        "crop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "w", "h"],
+          "properties": {
+            "x": { "type": "integer", "minimum": 0 },
+            "y": { "type": "integer", "minimum": 0 },
+            "w": { "type": "integer", "exclusiveMinimum": 0 },
+            "h": { "type": "integer", "exclusiveMinimum": 0 }
+          }
+        },
+        "resize": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "outWidthPx", "outHeightPx"],
+          "properties": {
+            "method": { "type": "string", "enum": ["none", "lanczos", "bilinear", "area"] },
+            "outWidthPx": { "type": "integer", "minimum": 1 },
+            "outHeightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "padding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["left", "top", "right", "bottom"],
+          "properties": {
+            "left": { "type": "integer", "minimum": 0 },
+            "top": { "type": "integer", "minimum": 0 },
+            "right": { "type": "integer", "minimum": 0 },
+            "bottom": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "modelInputDimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["widthPx", "heightPx"],
+          "properties": {
+            "widthPx": { "type": "integer", "minimum": 1 },
+            "heightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "transformToCapture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scaleX", "scaleY", "offsetX", "offsetY"],
+          "properties": {
+            "scaleX": { "type": "number", "exclusiveMinimum": 0 },
+            "scaleY": { "type": "number", "exclusiveMinimum": 0 },
+            "offsetX": { "type": "number" },
+            "offsetY": { "type": "number" }
+          },
+          "$comment": "capture = model_point * scale + offset; the host applies and validates it (AiFetchly design §11)."
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executionProvider", "inferenceMs"],
+      "properties": {
+        "executionProvider": { "type": "string", "enum": ["dml", "coreml", "cpu"] },
+        "onnxRuntimeVersion": { "type": "string", "maxLength": 32 },
+        "inferenceMs": { "type": "number", "minimum": 0 },
+        "stageTimings": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0 },
+          "propertyNames": { "type": "string", "maxLength": 64 }
+        },
+        "attentionGrid": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "$comment": "Grid metadata only; heatmap bytes are never part of ordinary tool JSON (design §3.4.2)."
+        }
+      }
+    },
+    "typedFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["errorCode", "stage"],
+      "properties": {
+        "errorCode": {
+          "type": "string",
+          "enum": [
+            "target_not_found",
+            "target_ambiguous",
+            "invalid_grounding_output",
+            "action_cancelled",
+            "resource_limit",
+            "backend_unavailable",
+            "model_not_ready",
+            "protocol_mismatch"
+          ]
+        },
+        "stage": { "type": "string", "maxLength": 64 },
+        "correlationId": { "type": "string", "maxLength": 128 }
+      }
+    }
+  }
+}

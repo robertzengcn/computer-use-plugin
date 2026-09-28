@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+  "title": "Coordinate transform fixture",
+  "description": "Golden geometry case consumed by host transform tests and the plugin oracle check (design §3.5). Invalid cases declare the reason they must be rejected.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "case"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^tf-[a-z0-9-]+$" },
+    "kind": { "const": "transform" },
+    "description": { "type": "string", "maxLength": 300 },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capture", "window", "executorUnits"],
+      "properties": {
+        "capture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["widthPx", "heightPx"],
+          "properties": {
+            "widthPx": { "type": "integer", "minimum": 1 },
+            "heightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["originX", "originY", "widthPx", "heightPx"],
+          "properties": {
+            "originX": { "type": "integer" },
+            "originY": { "type": "integer" },
+            "widthPx": { "type": "integer", "minimum": 1 },
+            "heightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "dpi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scale"],
+          "properties": {
+            "scale": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "resize": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["outWidthPx", "outHeightPx"],
+          "properties": {
+            "outWidthPx": { "type": "integer", "minimum": 1 },
+            "outHeightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "crop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "widthPx", "heightPx"],
+          "properties": {
+            "x": { "type": "integer", "minimum": 0 },
+            "y": { "type": "integer", "minimum": 0 },
+            "widthPx": { "type": "integer", "exclusiveMinimum": 0 },
+            "heightPx": { "type": "integer", "exclusiveMinimum": 0 }
+          }
+        },
+        "padding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["left", "top"],
+          "properties": {
+            "left": { "type": "integer", "minimum": 0 },
+            "top": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "executorUnits": {
+          "type": "string",
+          "enum": ["desktop_physical_pixels", "desktop_logical_points"]
+        }
+      }
+    },
+    "expected": {
+      "$comment": "Required for valid cases; absent on invalid ones.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["captureToDesktop", "roundTripTolerancePx"],
+      "properties": {
+        "captureToDesktop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scaleX", "scaleY", "offsetX", "offsetY"],
+          "properties": {
+            "scaleX": { "type": "number", "exclusiveMinimum": 0 },
+            "scaleY": { "type": "number", "exclusiveMinimum": 0 },
+            "offsetX": { "type": "number" },
+            "offsetY": { "type": "number" }
+          }
+        },
+        "modelToCapture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scaleX", "scaleY", "offsetX", "offsetY"],
+          "properties": {
+            "scaleX": { "type": "number", "exclusiveMinimum": 0 },
+            "scaleY": { "type": "number", "exclusiveMinimum": 0 },
+            "offsetX": { "type": "number" },
+            "offsetY": { "type": "number" }
+          }
+        },
+        "roundTripTolerancePx": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "invalid": {
+      "$comment": "Present exactly when the case must be rejected; names the violation.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason"],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "mixed_scale_mismatch",
+            "crop_out_of_bounds",
+            "non_finite_geometry",
+            "stale_window_geometry",
+            "negative_display_origin_unsupported"
+          ]
+        },
+        "detail": { "type": "string", "maxLength": 300 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Exactly one of expected or invalid.",
+      "oneOf": [
+        { "required": ["expected"], "not": { "required": ["invalid"] } },
+        { "required": ["invalid"], "not": { "required": ["expected"] } }
+      ]
+    }
+  ]
+}

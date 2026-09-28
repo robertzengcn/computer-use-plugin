@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",
+  "title": "Grounding model package manifest",
+  "description": "A model package is a set of individually hashed files, not an archive (design §6.4). This manifest records the full reproducibility and licence identity; release tooling blocks non-commercial licence chains (CU-INST-11).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packageKind",
+    "runtimeId",
+    "version",
+    "upstream",
+    "identity",
+    "export",
+    "preprocessing",
+    "graphs",
+    "executionProviders",
+    "files",
+    "licences",
+    "parityReport",
+    "healthFixture",
+    "limits"
+  ],
+  "properties": {
+    "packageKind": { "const": "grounding-model" },
+    "runtimeId": { "type": "string", "pattern": "^grounding-model-[a-z0-9-]+$" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modelId", "revision", "licence", "baseModel"],
+      "properties": {
+        "modelId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "revision": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "licence": { "$ref": "#/$defs/licenceId" },
+        "baseModel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["modelId", "licence"],
+          "properties": {
+            "modelId": { "type": "string", "minLength": 1, "maxLength": 256 },
+            "licence": { "$ref": "#/$defs/licenceId" }
+          }
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "groundingContractVersion",
+        "adapterId",
+        "architecture",
+        "manifestVersion",
+        "preprocessingRevision",
+        "decodingRevision",
+        "calibrationRevision"
+      ],
+      "properties": {
+        "groundingContractVersion": { "type": "integer", "minimum": 1 },
+        "adapterId": { "type": "string", "maxLength": 128 },
+        "architecture": { "type": "string", "maxLength": 128 },
+        "manifestVersion": { "type": "integer", "minimum": 1 },
+        "preprocessingRevision": { "type": "string", "maxLength": 64 },
+        "decodingRevision": { "type": "string", "maxLength": 64 },
+        "calibrationRevision": { "type": "string", "maxLength": 64 }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pipelineVersion", "exporter", "opset", "quantization"],
+      "properties": {
+        "pipelineVersion": { "type": "string", "maxLength": 64 },
+        "exporter": { "type": "string", "maxLength": 256 },
+        "opset": { "type": "integer", "minimum": 7 },
+        "quantization": {
+          "type": "string",
+          "enum": ["fp16", "int8-weight-only", "int4-weight-only-decoder-fp16-vision", "none"]
+        }
+      }
+    },
+    "preprocessing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["patchSize", "mergeSize", "temporalPatchSize", "pointerPadTokenId", "pixelBounds", "defaultPixelBudget"],
+      "properties": {
+        "patchSize": { "const": 14 },
+        "mergeSize": { "const": 2 },
+        "temporalPatchSize": { "const": 2 },
+        "pointerPadTokenId": { "const": 151661 },
+        "pixelBounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minWidthPx", "maxWidthPx", "minHeightPx", "maxHeightPx"],
+          "properties": {
+            "minWidthPx": { "type": "integer", "minimum": 1 },
+            "maxWidthPx": { "type": "integer", "minimum": 1 },
+            "minHeightPx": { "type": "integer", "minimum": 1 },
+            "maxHeightPx": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "defaultPixelBudget": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "graphs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "inputs", "outputs"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z_][a-z0-9_]*\\.onnx$" },
+          "inputs": { "type": "array", "minItems": 1, "items": { "type": "string", "maxLength": 128 } },
+          "outputs": { "type": "array", "minItems": 1, "items": { "type": "string", "maxLength": 128 } }
+        }
+      }
+    },
+    "executionProviders": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["dml", "coreml", "cpu"] }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "bytes", "sha256"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^[a-zA-Z0-9_][a-zA-Z0-9_./-]*$" },
+          "bytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "licences": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component", "licence", "noticePath"],
+        "properties": {
+          "component": { "type": "string", "maxLength": 256 },
+          "licence": { "$ref": "#/$defs/licenceId" },
+          "noticePath": { "type": "string", "maxLength": 512 }
+        }
+      }
+    },
+    "parityReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "fixtureCount", "status"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "fixtureCount": { "type": "integer", "minimum": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["candidate", "passed"],
+          "$comment": "candidate means export succeeded; qualification needs the full gate (PRD CU-PLUGIN-09)."
+        }
+      }
+    },
+    "healthFixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["imagePath", "expectedPath"],
+      "properties": {
+        "imagePath": { "type": "string", "maxLength": 512 },
+        "expectedPath": { "type": "string", "maxLength": 512 }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxFiles", "maxTotalBytes", "maxShardBytes"],
+      "properties": {
+        "maxFiles": { "const": 128 },
+        "maxTotalBytes": { "const": 8589934592 },
+        "maxShardBytes": { "const": 536870912 }
+      }
+    }
+  },
+  "$defs": {
+    "licenceId": {
+      "type": "string",
+      "enum": [
+        "apache-2.0",
+        "mit",
+        "bsd-3-clause",
+        "other-commercial-ok",
+        "qwen-research-non-commercial"
+      ],
+      "$comment": "qwen-research-non-commercial blocks publication: a fine-tune licence never overrides its base model (PRD §8, CU-INST-11)."
+    }
+  }
+}
