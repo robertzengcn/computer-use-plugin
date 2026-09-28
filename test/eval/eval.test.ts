@@ -60,14 +60,14 @@ describe('eval replay (CU-PLUGIN-12)', () => {
   });
 
   it('rejects missing required flags with exit 2', async () => {
-    const { io, stdout, stderr } = capture();
+    const { io } = capture();
     const code = await runCli(['replay', '--bundle', BUNDLE], evalCommands, io);
     expect(code).toBe(2);
   });
 
   it('marks a skipped required case as missing evidence, never a pass (CU-PLUGIN-19)', async () => {
     // Recorded runner throws on unknown case; the report layer records the skip.
-    const { io, stdout, stderr } = capture();
+    const { io } = capture();
     const code = await runCli(
       ['replay', '--bundle', BUNDLE, '--runner', 'synthetic-deterministic', '--dataset', 'w1-smoke'],
       evalCommands,
@@ -79,7 +79,7 @@ describe('eval replay (CU-PLUGIN-12)', () => {
 
 describe('eval compare (identical evidence)', () => {
   it('compares two configurations on the same dataset', async () => {
-    const { io, stdout, stderr } = capture();
+    const { io, stdout } = capture();
     const code = await runCli(
       ['compare', '--dataset', 'w1-smoke', '--configs', 'synthetic-deterministic,recorded'],
       evalCommands,
@@ -93,7 +93,7 @@ describe('eval compare (identical evidence)', () => {
   });
 
   it('rejects compare with fewer than two configs', async () => {
-    const { io, stdout, stderr } = capture();
+    const { io } = capture();
     const code = await runCli(['compare', '--dataset', 'w1-smoke', '--configs', 'recorded'], evalCommands, io);
     expect(code).toBe(2);
   });
