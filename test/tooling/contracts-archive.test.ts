@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, rm, writeFile, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   checkDeclarationDrift,
   generateDeclarations,
