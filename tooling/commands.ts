@@ -6,6 +6,8 @@
  */
 import { join } from 'node:path';
 import type { CommandResult, CommandSpec, ParsedArgs } from './cli.js';
+import { buildContractArchive } from './contracts/archive.js';
+import { checkDeclarationDrift } from './contracts/generate-types.js';
 import { formatConformanceReport, runConformance } from './contracts/validate.js';
 
 function flagString(args: ParsedArgs, name: string, fallback: string): string {
@@ -51,18 +53,41 @@ export const COMMANDS: readonly CommandSpec[] = [
     name: 'contracts:check',
     summary: 'Validate canonical schemas and all valid/invalid fixtures (Node only)',
     handler: async (_args, ctx) => {
-      const report = runConformance(join(ctx.cwd, 'contracts'));
+      const contractsDir = join(ctx.cwd, 'contracts');
+      const report = runConformance(contractsDir);
+      const drift = await checkDeclarationDrift(contractsDir);
+      const driftLines = drift.map(
+        (name) => `FAIL [declaration-drift] contracts/types/${name}.d.ts differs from regeneration`,
+      );
+      const outcome = report.failures.length === 0 && drift.length === 0 ? 'ok' : 'failed';
       return {
-        outcome: report.failures.length === 0 ? 'ok' : 'failed',
-        message: formatConformanceReport(report),
-        result: report,
+        outcome,
+        message: [formatConformanceReport(report), ...driftLines].join('\n'),
+        result: { ...report, declarationDrift: drift },
       };
     },
   },
   {
     name: 'contracts:build',
     summary: 'Assemble schema/fixture/type archive and digest into out/',
-    handler: async () => notYetWired('contracts:build', 'task 7 (archive builder)'),
+    handler: async (_args, ctx) => {
+      try {
+        const archive = await buildContractArchive(ctx.cwd, join(ctx.cwd, 'out'));
+        return {
+          outcome: 'ok',
+          message: [
+            `contracts archive ${archive.version}: ${archive.fileCount} files`,
+            `dir: ${archive.archiveDir}`,
+            `zip: ${archive.zipPath}`,
+            `zip sha256: ${archive.zipSha256}`,
+            `closure digest: ${archive.digest}`,
+          ].join('\n'),
+          result: archive,
+        };
+      } catch (error) {
+        return { outcome: 'failed', message: (error as Error).message };
+      }
+    },
   },
   {
     name: 'backend:prepare',

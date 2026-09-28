@@ -26,6 +26,8 @@ export interface ContractRegistry {
   has($id: string): boolean;
   /** All registered $ids in registry order. */
   ids(): readonly string[];
+  /** Repo-relative registered path for a $id. */
+  pathFor($id: string): string;
   /** Compile a registered schema, resolving refs only through the registry. */
   compile($id: string): ValidateFunction;
 }
@@ -79,11 +81,21 @@ export function loadContractRegistry(contractsDir: string): ContractRegistry {
   }
 
   const ids = [...seen];
+  const paths = new Map<string, string>(
+    parsed.schemas.map((entry) => [entry.$id, entry.path] as const),
+  );
 
   return {
     size: seen.size,
     has: ($id: string) => seen.has($id),
     ids: () => ids,
+    pathFor: ($id: string) => {
+      const path = paths.get($id);
+      if (path === undefined) {
+        throw new SchemaReferenceError(`$id not in local registry: ${$id}`);
+      }
+      return path;
+    },
     compile($id: string): ValidateFunction {
       if (!seen.has($id)) {
         throw new SchemaReferenceError(`$id not in local registry: ${$id}`);
