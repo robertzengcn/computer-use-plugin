@@ -1,0 +1,48 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-bad3",
+  "sessionGeneration": 0,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "m",
+  "candidates": [
+    {
+      "geometry": {
+        "point": {
+          "x": 10.0,
+          "y": 10.0
+        },
+        "region": {
+          "x": 0,
+          "y": 0,
+          "w": -5,
+          "h": 8
+        }
+      },
+      "coordinateSpace": "capture_pixels",
+      "imageDimensions": {
+        "widthPx": 1920,
+        "heightPx": 1080
+      },
+      "scores": [
+        {
+          "name": "s",
+          "value": 1.0,
+          "semantics": "diagnostic_raw",
+          "version": "v"
+        }
+      ]
+    }
+  ],
+  "preprocessing": {
+    "modelInputDimensions": {
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "transformToCapture": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  }
+}

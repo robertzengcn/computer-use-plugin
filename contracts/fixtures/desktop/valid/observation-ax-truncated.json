@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "id": "obs-0002",
+    "sessionId": "sess-0001",
+    "sessionGeneration": 3,
+    "capturedAt": "2026-09-27T10:00:01.000Z",
+    "targetWindowId": "win-excel-001",
+    "displayConfigurationVersion": "disp-v7",
+    "executorUnits": "desktop_physical_pixels",
+    "captureWidthPx": 1280,
+    "captureHeightPx": 720,
+    "plannerMode": "local_only",
+    "plannerImageAttached": false,
+    "imageSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "downsampling": {
+      "originalWidthPx": 1920,
+      "originalHeightPx": 1080,
+      "method": "lanczos"
+    }
+  },
+  "state": {
+    "windows": [
+      {
+        "id": "win-excel-001",
+        "title": "客户名单.xlsx - Excel",
+        "processId": 4210,
+        "frame": {
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1040
+        }
+      }
+    ],
+    "axTree": {
+      "elementCount": 5000,
+      "truncated": true,
+      "elements": [
+        {
+          "role": "pane",
+          "name": "工作表 Sheet1",
+          "frame": {
+            "x": 0,
+            "y": 40,
+            "w": 1920,
+            "h": 1000
+          }
+        },
+        {
+          "role": "header",
+          "name": "电子邮件",
+          "value": "",
+          "children": [
+            2,
+            3
+          ]
+        }
+      ]
+    }
+  }
+}

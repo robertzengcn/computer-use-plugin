@@ -1,0 +1,24 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-0001",
+  "sessionGeneration": 3,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+  "image": {
+    "format": "png",
+    "widthPx": 1920,
+    "heightPx": 1080,
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "crop": {
+      "x": 960,
+      "y": 0,
+      "w": 960,
+      "h": 1080
+    }
+  },
+  "task": {
+    "description": "Name Box in the formula bar area",
+    "maxCandidates": 3,
+    "pixelBudget": 1500000
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "errorCode": "desktop_busy",
+  "message": "The desktop is currently locked by another session.",
+  "stage": "readiness",
+  "retryClass": "retry_after_reobserve",
+  "correlationId": "corr-017f"
+}

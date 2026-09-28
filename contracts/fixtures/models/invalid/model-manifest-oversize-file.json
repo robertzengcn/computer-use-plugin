@@ -1,0 +1,84 @@
+{
+  "packageKind": "grounding-model",
+  "runtimeId": "grounding-model-gui-actor-2b-fp16",
+  "version": "0.1.0",
+  "upstream": {
+    "modelId": "m",
+    "revision": "r",
+    "licence": "mit",
+    "baseModel": {
+      "modelId": "b",
+      "licence": "apache-2.0"
+    }
+  },
+  "identity": {
+    "groundingContractVersion": 1,
+    "adapterId": "a",
+    "architecture": "ar",
+    "manifestVersion": 1,
+    "preprocessingRevision": "p",
+    "decodingRevision": "d",
+    "calibrationRevision": "c"
+  },
+  "export": {
+    "pipelineVersion": "e",
+    "exporter": "x",
+    "opset": 17,
+    "quantization": "fp16"
+  },
+  "preprocessing": {
+    "patchSize": 14,
+    "mergeSize": 2,
+    "temporalPatchSize": 2,
+    "pointerPadTokenId": 151661,
+    "pixelBounds": {
+      "minWidthPx": 224,
+      "maxWidthPx": 3584,
+      "minHeightPx": 224,
+      "maxHeightPx": 3584
+    },
+    "defaultPixelBudget": 1500000
+  },
+  "graphs": [
+    {
+      "name": "vision_encoder.onnx",
+      "inputs": [
+        "pixel_values"
+      ],
+      "outputs": [
+        "image_embeds"
+      ]
+    }
+  ],
+  "executionProviders": [
+    "cpu"
+  ],
+  "files": [
+    {
+      "path": "big.bin",
+      "bytes": 1073741825,
+      "sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+    }
+  ],
+  "licences": [
+    {
+      "component": "w",
+      "licence": "mit",
+      "noticePath": "L"
+    }
+  ],
+  "parityReport": {
+    "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "fixtureCount": 1,
+    "status": "candidate"
+  },
+  "healthFixture": {
+    "imagePath": "h.png",
+    "expectedPath": "h.json"
+  },
+  "limits": {
+    "maxFiles": 128,
+    "maxTotalBytes": 8589934592,
+    "maxShardBytes": 536870912
+  }
+}

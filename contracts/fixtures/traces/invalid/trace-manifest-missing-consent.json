@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "traceId": "trace-0001",
+  "contractVersions": {
+    "tools": 1,
+    "desktop": 1,
+    "grounding": 1
+  },
+  "configuration": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "gui-actor-onnx",
+    "adapterVersion": "0.1.0",
+    "onnxRuntimeVersion": "1.20.0",
+    "executionProvider": "dml",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1",
+    "modelManifestSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "target": {
+    "windowTitle": "Leads.xlsx - Excel",
+    "appId": "excel.exe",
+    "os": "win32-10.0.26100",
+    "displayMetadata": {
+      "scaling": 1.5,
+      "locale": "en-US",
+      "theme": "light"
+    }
+  },
+  "plannerMode": "visual_planner",
+  "steps": [
+    {
+      "stepId": "step-001",
+      "observation": "steps/step-001/observation.json",
+      "grounding": "steps/step-001/grounding.json",
+      "action": "steps/step-001/action.json"
+    },
+    {
+      "stepId": "step-002",
+      "verification": "steps/step-002/verification.json"
+    }
+  ],
+  "annotations": "annotations.json",
+  "redacted": true
+}

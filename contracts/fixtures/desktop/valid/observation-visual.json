@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "id": "obs-0001",
+    "sessionId": "sess-0001",
+    "sessionGeneration": 3,
+    "capturedAt": "2026-09-27T10:00:00.250Z",
+    "targetWindowId": "win-excel-001",
+    "displayConfigurationVersion": "disp-v7",
+    "executorUnits": "desktop_physical_pixels",
+    "captureWidthPx": 1920,
+    "captureHeightPx": 1080,
+    "plannerMode": "visual_planner",
+    "plannerImageAttached": true,
+    "imageSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "state": {
+    "windows": [
+      {
+        "id": "win-excel-001",
+        "title": "Leads.xlsx - Excel",
+        "processId": 4210,
+        "processName": "EXCEL.EXE",
+        "frame": {
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1040
+        }
+      },
+      {
+        "id": "win-shell-002",
+        "title": "Program Manager",
+        "processId": 1200,
+        "frame": {
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080
+        }
+      }
+    ],
+    "focusedWindowId": "win-excel-001",
+    "foregroundOwner": "EXCEL.EXE"
+  }
+}

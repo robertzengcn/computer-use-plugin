@@ -1,0 +1,12 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-0003",
+  "sessionGeneration": 3,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+  "failure": {
+    "errorCode": "target_ambiguous",
+    "stage": "decoding",
+    "correlationId": "corr-g1"
+  }
+}

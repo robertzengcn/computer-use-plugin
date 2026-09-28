@@ -4,7 +4,9 @@
  * until the Phase 0 spikes pin their native environments; they never pretend
  * an unavailable environment is compatible (PRD §6.1).
  */
+import { join } from 'node:path';
 import type { CommandResult, CommandSpec, ParsedArgs } from './cli.js';
+import { formatConformanceReport, runConformance } from './contracts/validate.js';
 
 function flagString(args: ParsedArgs, name: string, fallback: string): string {
   const value = args.flags.get(name);
@@ -48,7 +50,14 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     name: 'contracts:check',
     summary: 'Validate canonical schemas and all valid/invalid fixtures (Node only)',
-    handler: async () => notYetWired('contracts:check', 'task 4 (conformance runner)'),
+    handler: async (_args, ctx) => {
+      const report = runConformance(join(ctx.cwd, 'contracts'));
+      return {
+        outcome: report.failures.length === 0 ? 'ok' : 'failed',
+        message: formatConformanceReport(report),
+        result: report,
+      };
+    },
   },
   {
     name: 'contracts:build',

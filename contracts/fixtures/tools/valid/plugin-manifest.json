@@ -1,0 +1,35 @@
+{
+  "id": "aifetchly-computer-use",
+  "version": "0.1.0",
+  "contractVersions": {
+    "publicTools": 1,
+    "desktop": 1,
+    "grounding": 1,
+    "modelManifest": 1,
+    "trace": 1
+  },
+  "platforms": [
+    "win32-x64"
+  ],
+  "localAiRuntimes": [
+    {
+      "runtimeId": "grounding-onnxruntime",
+      "minVersion": "1.20.0"
+    },
+    {
+      "runtimeId": "grounding-model-gui-actor-2b-fp16",
+      "minVersion": "0.1.0"
+    }
+  ],
+  "backend": {
+    "windows": {
+      "status": "spike-pending"
+    },
+    "macos": {
+      "status": "spike-pending"
+    }
+  },
+  "skills": [
+    "computer-use"
+  ]
+}

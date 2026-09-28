@@ -1,0 +1,30 @@
+{
+  "id": "tf-windows-dpi-100",
+  "kind": "transform",
+  "description": "100% Windows DPI: capture equals window content 1:1, offset only.",
+  "case": {
+    "capture": {
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "window": {
+      "originX": 100,
+      "originY": 50,
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "executorUnits": "desktop_physical_pixels",
+    "dpi": {
+      "scale": 1.0
+    }
+  },
+  "expected": {
+    "captureToDesktop": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": 100.0,
+      "offsetY": 50.0
+    },
+    "roundTripTolerancePx": 0.5
+  }
+}

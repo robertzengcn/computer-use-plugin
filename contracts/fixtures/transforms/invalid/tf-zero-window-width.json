@@ -1,0 +1,21 @@
+{
+  "id": "tf-zero-window-width",
+  "kind": "transform",
+  "case": {
+    "capture": {
+      "widthPx": 100,
+      "heightPx": 100
+    },
+    "window": {
+      "originX": 0,
+      "originY": 0,
+      "widthPx": 0,
+      "heightPx": 100
+    },
+    "executorUnits": "desktop_physical_pixels"
+  },
+  "invalid": {
+    "reason": "non_finite_geometry",
+    "detail": "zero-width window frame is not a usable geometry"
+  }
+}

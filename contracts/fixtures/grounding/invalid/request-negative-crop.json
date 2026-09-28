@@ -1,0 +1,21 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-bad",
+  "sessionGeneration": 0,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+  "image": {
+    "format": "png",
+    "widthPx": 1920,
+    "heightPx": 1080,
+    "crop": {
+      "x": -10,
+      "y": 0,
+      "w": 100,
+      "h": 100
+    }
+  },
+  "task": {
+    "description": "anything"
+  }
+}

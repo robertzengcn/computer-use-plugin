@@ -1,0 +1,62 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-0001",
+  "sessionGeneration": 3,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+  "candidates": [
+    {
+      "geometry": {
+        "point": {
+          "x": 1204.5,
+          "y": 88.0
+        }
+      },
+      "coordinateSpace": "capture_pixels",
+      "imageDimensions": {
+        "widthPx": 960,
+        "heightPx": 1080
+      },
+      "scores": [
+        {
+          "name": "attention",
+          "value": 0.87,
+          "semantics": "attention_activation",
+          "version": "dec-v1"
+        }
+      ]
+    }
+  ],
+  "preprocessing": {
+    "crop": {
+      "x": 960,
+      "y": 0,
+      "w": 960,
+      "h": 1080
+    },
+    "modelInputDimensions": {
+      "widthPx": 960,
+      "heightPx": 1080
+    },
+    "transformToCapture": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": 960.0,
+      "offsetY": 0.0
+    }
+  },
+  "diagnostics": {
+    "executionProvider": "dml",
+    "onnxRuntimeVersion": "1.20.0",
+    "inferenceMs": 412.5,
+    "stageTimings": {
+      "vision_encoder": 180.2,
+      "decoder_prefill": 190.1,
+      "pointer_head": 12.4
+    },
+    "attentionGrid": {
+      "width": 34,
+      "height": 38
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "id": "obs-bad2",
+    "sessionId": "sess-0001",
+    "sessionGeneration": 0,
+    "capturedAt": "2026-09-27T10:00:00Z",
+    "targetWindowId": "win-1",
+    "displayConfigurationVersion": "disp-v1",
+    "executorUnits": "desktop_logical_points",
+    "captureWidthPx": 800,
+    "captureHeightPx": 600,
+    "plannerMode": "local_only",
+    "plannerImageAttached": false,
+    "imageSha256": "nothex"
+  },
+  "state": {
+    "windows": []
+  }
+}

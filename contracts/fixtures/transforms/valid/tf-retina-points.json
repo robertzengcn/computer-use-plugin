@@ -1,0 +1,30 @@
+{
+  "id": "tf-retina-points",
+  "kind": "transform",
+  "description": "Retina 2x: capture in physical pixels, desktop executor units are logical points; negative secondary-display origin.",
+  "case": {
+    "capture": {
+      "widthPx": 2560,
+      "heightPx": 1600
+    },
+    "window": {
+      "originX": -1440,
+      "originY": 0,
+      "widthPx": 1280,
+      "heightPx": 800
+    },
+    "executorUnits": "desktop_logical_points",
+    "dpi": {
+      "scale": 2.0
+    }
+  },
+  "expected": {
+    "captureToDesktop": {
+      "scaleX": 0.5,
+      "scaleY": 0.5,
+      "offsetX": -1440.0,
+      "offsetY": 0.0
+    },
+    "roundTripTolerancePx": 1.0
+  }
+}

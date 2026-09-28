@@ -1,0 +1,30 @@
+{
+  "id": "tf-windows-dpi-150",
+  "kind": "transform",
+  "description": "150% Windows DPI: physical window extent over logical capture size.",
+  "case": {
+    "capture": {
+      "widthPx": 1280,
+      "heightPx": 720
+    },
+    "window": {
+      "originX": 200,
+      "originY": 100,
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "executorUnits": "desktop_physical_pixels",
+    "dpi": {
+      "scale": 1.5
+    }
+  },
+  "expected": {
+    "captureToDesktop": {
+      "scaleX": 1.5,
+      "scaleY": 1.5,
+      "offsetX": 200.0,
+      "offsetY": 100.0
+    },
+    "roundTripTolerancePx": 0.5
+  }
+}

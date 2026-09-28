@@ -1,0 +1,19 @@
+{
+  "backendVersion": "0.1.0",
+  "protocolVersion": "2025-06-18",
+  "contractVersion": 1,
+  "supportedActions": [
+    "click",
+    "reboot_machine"
+  ],
+  "permissions": {
+    "accessibility": "granted",
+    "screenRecording": "granted",
+    "inputMonitoring": "granted"
+  },
+  "plannerMode": "local_only",
+  "displaySupport": {
+    "multiMonitor": false,
+    "mixedDpi": false
+  }
+}

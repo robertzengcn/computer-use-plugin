@@ -1,0 +1,27 @@
+{
+  "backendVersion": "0.1.0-spike",
+  "protocolVersion": "2025-06-18",
+  "contractVersion": 1,
+  "supportedActions": [
+    "click",
+    "type",
+    "scroll",
+    "move",
+    "drag",
+    "keys"
+  ],
+  "permissions": {
+    "accessibility": "granted",
+    "screenRecording": "granted",
+    "inputMonitoring": "not_determined"
+  },
+  "plannerMode": "local_only",
+  "displaySupport": {
+    "multiMonitor": false,
+    "mixedDpi": false
+  },
+  "grounder": {
+    "state": "not_installed",
+    "provider": "none"
+  }
+}

@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json",
+      "file": "desktop/invalid/action-raw-coordinates.json",
+      "expectation": "invalid",
+      "description": "action-raw-coordinates (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json",
+      "file": "desktop/invalid/capabilities-unknown-action.json",
+      "expectation": "invalid",
+      "description": "capabilities-unknown-action (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+      "file": "desktop/invalid/error-message-path-leak.json",
+      "expectation": "invalid",
+      "description": "error-message-path-leak (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+      "file": "desktop/invalid/error-unknown-code.json",
+      "expectation": "invalid",
+      "description": "error-unknown-code (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
+      "file": "desktop/invalid/observation-bad-captured-at.json",
+      "expectation": "invalid",
+      "description": "observation-bad-captured-at (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
+      "file": "desktop/invalid/observation-bad-sha.json",
+      "expectation": "invalid",
+      "description": "observation-bad-sha (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
+      "file": "desktop/invalid/observation-negative-dimensions.json",
+      "expectation": "invalid",
+      "description": "observation-negative-dimensions (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json",
+      "file": "desktop/valid/action-click-outcome-uncertain.json",
+      "expectation": "valid",
+      "description": "action-click-outcome-uncertain (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json",
+      "file": "desktop/valid/action-drag-dispatched.json",
+      "expectation": "valid",
+      "description": "action-drag-dispatched (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json",
+      "file": "desktop/valid/action-type.json",
+      "expectation": "valid",
+      "description": "action-type (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json",
+      "file": "desktop/valid/capabilities-local.json",
+      "expectation": "valid",
+      "description": "capabilities-local (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json",
+      "file": "desktop/valid/capabilities-visual.json",
+      "expectation": "valid",
+      "description": "capabilities-visual (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+      "file": "desktop/valid/error-model-not-ready.json",
+      "expectation": "valid",
+      "description": "error-model-not-ready (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+      "file": "desktop/valid/error-plain.json",
+      "expectation": "valid",
+      "description": "error-plain (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+      "file": "desktop/valid/error-unsupported-target-reason.json",
+      "expectation": "valid",
+      "description": "error-unsupported-target-reason (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
+      "file": "desktop/valid/observation-ax-truncated.json",
+      "expectation": "valid",
+      "description": "observation-ax-truncated (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
+      "file": "desktop/valid/observation-visual.json",
+      "expectation": "valid",
+      "description": "observation-visual (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/capabilities-v1.json",
+      "file": "grounding/invalid/capabilities-unknown-provider.json",
+      "expectation": "invalid",
+      "description": "capabilities-unknown-provider (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
+      "file": "grounding/invalid/request-negative-crop.json",
+      "expectation": "invalid",
+      "description": "request-negative-crop (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/invalid/result-candidates-and-failure.json",
+      "expectation": "invalid",
+      "description": "result-candidates-and-failure (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/invalid/result-desktop-coordinates.json",
+      "expectation": "invalid",
+      "description": "result-desktop-coordinates (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/invalid/result-nonfinite-region.json",
+      "expectation": "invalid",
+      "description": "result-nonfinite-region (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/capabilities-v1.json",
+      "file": "grounding/valid/capabilities.json",
+      "expectation": "valid",
+      "description": "capabilities (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
+      "file": "grounding/valid/request-crop.json",
+      "expectation": "valid",
+      "description": "request-crop (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/valid/result-failure-ambiguous.json",
+      "expectation": "valid",
+      "description": "result-failure-ambiguous (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/valid/result-point-only.json",
+      "expectation": "valid",
+      "description": "result-point-only (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/valid/result-region-scores.json",
+      "expectation": "valid",
+      "description": "result-region-scores (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",
+      "file": "models/invalid/model-manifest-empty-graph-inputs.json",
+      "expectation": "invalid",
+      "description": "model-manifest-empty-graph-inputs (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",
+      "file": "models/invalid/model-manifest-oversize-file.json",
+      "expectation": "invalid",
+      "description": "model-manifest-oversize-file (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",
+      "file": "models/valid/model-manifest-fp16.json",
+      "expectation": "valid",
+      "description": "model-manifest-fp16 (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/plugin-manifest-v1.json",
+      "file": "tools/invalid/plugin-manifest-bad-runtime.json",
+      "expectation": "invalid",
+      "description": "plugin-manifest-bad-runtime (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/invalid/public-tools-missing-tool.json",
+      "expectation": "invalid",
+      "description": "public-tools-missing-tool (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/plugin-manifest-v1.json",
+      "file": "tools/valid/plugin-manifest.json",
+      "expectation": "valid",
+      "description": "plugin-manifest (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/valid/public-tools-v1.json",
+      "expectation": "valid",
+      "description": "public-tools-v1 (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/traces/trace-manifest-v1.json",
+      "file": "traces/invalid/trace-manifest-missing-consent.json",
+      "expectation": "invalid",
+      "description": "trace-manifest-missing-consent (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/traces/trace-manifest-v1.json",
+      "file": "traces/valid/trace-manifest.json",
+      "expectation": "valid",
+      "description": "trace-manifest (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/invalid/tf-crop-negative-origin.json",
+      "expectation": "invalid",
+      "description": "tf-crop-negative-origin (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/invalid/tf-zero-window-width.json",
+      "expectation": "invalid",
+      "description": "tf-zero-window-width (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-anisotropic-resize.json",
+      "expectation": "valid",
+      "description": "tf-anisotropic-resize (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-crop-offset.json",
+      "expectation": "valid",
+      "description": "tf-crop-offset (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-crop-out-of-bounds.json",
+      "expectation": "valid",
+      "description": "tf-crop-out-of-bounds (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-mixed-scale-mismatch.json",
+      "expectation": "valid",
+      "description": "tf-mixed-scale-mismatch (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-padding-shift.json",
+      "expectation": "valid",
+      "description": "tf-padding-shift (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-retina-points.json",
+      "expectation": "valid",
+      "description": "tf-retina-points (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-stale-window-geometry.json",
+      "expectation": "valid",
+      "description": "tf-stale-window-geometry (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-windows-dpi-100.json",
+      "expectation": "valid",
+      "description": "tf-windows-dpi-100 (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/fixtures/transforms-v1.json",
+      "file": "transforms/valid/tf-windows-dpi-150.json",
+      "expectation": "valid",
+      "description": "tf-windows-dpi-150 (valid)"
+    }
+  ]
+}

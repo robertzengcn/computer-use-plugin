@@ -1,0 +1,37 @@
+{
+  "id": "tf-padding-shift",
+  "kind": "transform",
+  "description": "Left/top padding shifts model origin outside the capture origin.",
+  "case": {
+    "capture": {
+      "widthPx": 1000,
+      "heightPx": 800
+    },
+    "window": {
+      "originX": 0,
+      "originY": 0,
+      "widthPx": 1000,
+      "heightPx": 800
+    },
+    "executorUnits": "desktop_physical_pixels",
+    "padding": {
+      "left": 16,
+      "top": 16
+    }
+  },
+  "expected": {
+    "captureToDesktop": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    },
+    "modelToCapture": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": -16.0,
+      "offsetY": -16.0
+    },
+    "roundTripTolerancePx": 0.5
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "contractVersion": 1,
+  "adapterId": "gui-actor-onnx",
+  "adapterVersion": "0.1.0",
+  "acceptedArchitectures": [
+    "gui-actor-2b-qwen2-vl"
+  ],
+  "acceptedManifestVersions": [
+    1
+  ],
+  "onnxRuntime": {
+    "version": "1.20.0",
+    "providers": [
+      "dml",
+      "cpu"
+    ]
+  },
+  "image": {
+    "formats": [
+      "png"
+    ],
+    "maxPixels": 4194304,
+    "maxBytes": 8388608,
+    "cropSupported": true
+  },
+  "output": {
+    "point": true,
+    "region": true,
+    "heatmap": false,
+    "absencePolicy": "calibrated_threshold"
+  },
+  "cooperativeCancel": true
+}

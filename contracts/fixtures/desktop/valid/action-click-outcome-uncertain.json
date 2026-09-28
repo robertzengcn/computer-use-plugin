@@ -1,0 +1,17 @@
+{
+  "actionId": "act-0009",
+  "sessionId": "sess-0001",
+  "action": {
+    "kind": "click",
+    "targetHandle": "tgt-3f9a",
+    "button": "left",
+    "count": 1
+  },
+  "outcome": {
+    "actionId": "act-0009",
+    "state": "uncertain",
+    "verification": "unknown",
+    "errorCode": "execution_uncertain",
+    "dispatchedAt": "2026-09-27T10:00:02.500Z"
+  }
+}

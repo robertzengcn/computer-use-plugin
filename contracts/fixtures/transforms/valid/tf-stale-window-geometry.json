@@ -1,0 +1,25 @@
+{
+  "id": "tf-stale-window-geometry",
+  "kind": "transform",
+  "description": "Geometry from an older observation: the window has moved; old mapping must not be reused.",
+  "case": {
+    "capture": {
+      "widthPx": 1280,
+      "heightPx": 720
+    },
+    "window": {
+      "originX": 640,
+      "originY": 360,
+      "widthPx": 1280,
+      "heightPx": 720
+    },
+    "executorUnits": "desktop_physical_pixels",
+    "dpi": {
+      "scale": 1.0
+    }
+  },
+  "invalid": {
+    "reason": "stale_window_geometry",
+    "detail": "window moved after capture; re-observe before input"
+  }
+}

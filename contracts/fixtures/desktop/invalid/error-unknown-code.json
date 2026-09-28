@@ -1,0 +1,7 @@
+{
+  "errorCode": "super_unknown_error",
+  "message": "Something happened.",
+  "stage": "dispatch",
+  "retryClass": "none",
+  "correlationId": "corr-x"
+}

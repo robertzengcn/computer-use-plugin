@@ -1,0 +1,28 @@
+{
+  "id": "tf-crop-out-of-bounds",
+  "kind": "transform",
+  "description": "Crop rectangle extends beyond the capture; must be rejected before input, never clamped.",
+  "case": {
+    "capture": {
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "window": {
+      "originX": 0,
+      "originY": 0,
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "executorUnits": "desktop_physical_pixels",
+    "crop": {
+      "x": 1800,
+      "y": 1000,
+      "widthPx": 400,
+      "heightPx": 300
+    }
+  },
+  "invalid": {
+    "reason": "crop_out_of_bounds",
+    "detail": "crop right edge 2200 exceeds capture width 1920"
+  }
+}

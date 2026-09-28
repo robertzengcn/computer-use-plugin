@@ -1,0 +1,14 @@
+{
+  "actionId": "act-0011",
+  "action": {
+    "kind": "drag",
+    "fromHandle": "tgt-10",
+    "toHandle": "tgt-11"
+  },
+  "outcome": {
+    "actionId": "act-0011",
+    "state": "dispatched",
+    "verification": "satisfied",
+    "postObservationId": "obs-0012"
+  }
+}

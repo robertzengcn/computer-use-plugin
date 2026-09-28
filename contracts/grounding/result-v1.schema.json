@@ -72,6 +72,7 @@
             "type": "object",
             "additionalProperties": false,
             "required": ["name", "value", "semantics", "version"],
+            "$comment": "Adapter-specific ranking scores with named semantics; no assumed cross-model confidence scale (design §3.4.2).",
             "properties": {
               "name": { "type": "string", "maxLength": 64 },
               "value": { "type": "number" },
@@ -79,8 +80,7 @@
                 "type": "string",
                 "enum": ["attention_activation", "region_mean_activation", "calibrated_probability", "diagnostic_raw"]
               },
-              "version": { "type": "string", "maxLength": 32 },
-              "$comment": "No assumed cross-model confidence scale (design §3.4.2)."
+              "version": { "type": "string", "maxLength": 32 }
             }
           }
         }

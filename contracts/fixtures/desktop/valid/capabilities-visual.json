@@ -1,0 +1,24 @@
+{
+  "backendVersion": "0.1.0-spike",
+  "protocolVersion": "2025-06-18",
+  "contractVersion": 1,
+  "supportedActions": [
+    "click",
+    "type",
+    "keys"
+  ],
+  "permissions": {
+    "accessibility": "granted",
+    "screenRecording": "granted",
+    "inputMonitoring": "unsupported_platform"
+  },
+  "plannerMode": "visual_planner",
+  "displaySupport": {
+    "multiMonitor": true,
+    "mixedDpi": true
+  },
+  "grounder": {
+    "state": "ready",
+    "provider": "gui-actor-2b"
+  }
+}

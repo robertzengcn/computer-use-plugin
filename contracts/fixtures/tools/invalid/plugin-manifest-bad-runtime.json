@@ -1,0 +1,20 @@
+{
+  "id": "aifetchly-computer-use",
+  "version": "0.1.0",
+  "contractVersions": {
+    "publicTools": 1,
+    "desktop": 1,
+    "grounding": 1,
+    "modelManifest": 1,
+    "trace": 1
+  },
+  "platforms": [
+    "win32-x64"
+  ],
+  "localAiRuntimes": [
+    {
+      "runtimeId": "totally-new-runtime-a-plugin-cannot-mint",
+      "minVersion": "1.0.0"
+    }
+  ]
+}

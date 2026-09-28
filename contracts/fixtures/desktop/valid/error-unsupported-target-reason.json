@@ -1,0 +1,8 @@
+{
+  "errorCode": "unsupported_target",
+  "message": "The target window requires elevated privileges.",
+  "stage": "dispatch",
+  "retryClass": "handoff",
+  "correlationId": "corr-0180",
+  "reason": "elevated_window"
+}

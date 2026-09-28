@@ -1,0 +1,46 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-bad4",
+  "sessionGeneration": 0,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "m",
+  "candidates": [
+    {
+      "geometry": {
+        "point": {
+          "x": 10.0,
+          "y": 10.0
+        }
+      },
+      "coordinateSpace": "capture_pixels",
+      "imageDimensions": {
+        "widthPx": 1920,
+        "heightPx": 1080
+      },
+      "scores": [
+        {
+          "name": "s",
+          "value": 1.0,
+          "semantics": "diagnostic_raw",
+          "version": "v"
+        }
+      ]
+    }
+  ],
+  "preprocessing": {
+    "modelInputDimensions": {
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "transformToCapture": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  },
+  "failure": {
+    "errorCode": "target_not_found",
+    "stage": "decoding"
+  }
+}

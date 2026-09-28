@@ -1,0 +1,9 @@
+{
+  "actionId": "act-bad",
+  "action": {
+    "kind": "click",
+    "targetHandle": "tgt-1",
+    "x": 944,
+    "y": 331
+  }
+}

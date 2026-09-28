@@ -1,0 +1,7 @@
+{
+  "errorCode": "backend_unavailable",
+  "message": "failed reading C:\\Users\\robert\\leads.xlsx config at /etc/hosts",
+  "stage": "startup",
+  "retryClass": "none",
+  "correlationId": "corr-y"
+}

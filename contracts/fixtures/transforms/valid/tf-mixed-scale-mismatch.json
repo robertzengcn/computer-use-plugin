@@ -1,0 +1,25 @@
+{
+  "id": "tf-mixed-scale-mismatch",
+  "kind": "transform",
+  "description": "Declared DPI disagrees with the window-extent/capture ratio; hosts must reject rather than assume a global scale.",
+  "case": {
+    "capture": {
+      "widthPx": 1280,
+      "heightPx": 720
+    },
+    "window": {
+      "originX": 0,
+      "originY": 0,
+      "widthPx": 1920,
+      "heightPx": 1080
+    },
+    "executorUnits": "desktop_physical_pixels",
+    "dpi": {
+      "scale": 2.0
+    }
+  },
+  "invalid": {
+    "reason": "mixed_scale_mismatch",
+    "detail": "extent ratio 1.5 vs declared dpi 2.0"
+  }
+}
