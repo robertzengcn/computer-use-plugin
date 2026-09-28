@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "w1-smoke",
+  "version": "0.1.0",
+  "description": "Synthetic W-1 Excel grounding targets; smoke-scale corpus for replay/compare tooling.",
+  "cases": [
+    {
+      "id": "w1-name-box-100",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Name Box at 100% scaling, light theme",
+      "contentSha256": "01010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 24,
+          "y": 28,
+          "w": 140,
+          "h": 22
+        }
+      }
+    },
+    {
+      "id": "w1-sheet-tab-cjk",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Sheet tab 客户名单 at 150% scaling, Simplified Chinese UI",
+      "contentSha256": "02020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202020202",
+      "displayMetadata": {
+        "scaling": 1.5,
+        "locale": "zh-CN",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 460,
+          "y": 1042,
+          "w": 96,
+          "h": 26
+        }
+      }
+    },
+    {
+      "id": "w1-filter-arrow",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Filter dropdown arrow on the email header",
+      "contentSha256": "03030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "dark"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 512,
+          "y": 190,
+          "w": 18,
+          "h": 18
+        }
+      }
+    },
+    {
+      "id": "w1-ribbon-icon-only",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Icon-only ribbon button (Merge & Center) in a collapsed ribbon group",
+      "contentSha256": "04040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404040404",
+      "displayMetadata": {
+        "scaling": 1.5,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 232,
+          "y": 118,
+          "w": 32,
+          "h": 32
+        }
+      }
+    },
+    {
+      "id": "w1-gallery-swatch",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Table style gallery swatch, second row third column",
+      "contentSha256": "05050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 700,
+          "y": 260,
+          "w": 64,
+          "h": 48
+        }
+      }
+    },
+    {
+      "id": "w1-absent-collapsed-group",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Control removed by collapsing the ribbon — must not be found",
+      "contentSha256": "06060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "absent"
+      }
+    },
+    {
+      "id": "w1-ambiguous-repeated-label",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Repeated sheet tab labels — ambiguous target",
+      "contentSha256": "07070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "ambiguous"
+      }
+    },
+    {
+      "id": "w1-header-cell-zh",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Header cell 电子邮件 in the Chinese workbook fixture",
+      "contentSha256": "08080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "zh-CN",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 64,
+          "y": 188,
+          "w": 120,
+          "h": 24
+        }
+      }
+    }
+  ]
+}

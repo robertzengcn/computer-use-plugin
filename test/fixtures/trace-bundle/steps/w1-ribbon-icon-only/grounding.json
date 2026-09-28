@@ -1,0 +1,13 @@
+{
+  "caseId": "w1-ribbon-icon-only",
+  "candidates": [
+    {
+      "point": {
+        "x": 248,
+        "y": 134
+      },
+      "score": 0.88
+    }
+  ],
+  "inferenceMs": 439
+}

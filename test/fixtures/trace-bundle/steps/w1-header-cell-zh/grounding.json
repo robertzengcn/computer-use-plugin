@@ -1,0 +1,13 @@
+{
+  "caseId": "w1-header-cell-zh",
+  "candidates": [
+    {
+      "point": {
+        "x": 124,
+        "y": 200
+      },
+      "score": 0.88
+    }
+  ],
+  "inferenceMs": 437
+}

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "profiles": {
+    "recorded": {
+      "kind": "recorded",
+      "description": "Re-evaluates saved evidence in a trace bundle; never starts a backend or sends input (CU-PLUGIN-12).",
+      "configuration": {
+        "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+        "adapterId": "gui-actor-onnx",
+        "adapterVersion": "0.1.0",
+        "preprocessingRevision": "prep-v1",
+        "decodingRevision": "dec-v1",
+        "calibrationRevision": "cal-v1"
+      }
+    },
+    "synthetic-deterministic": {
+      "kind": "synthetic",
+      "description": "Deterministic hash-seeded stub used to exercise replay/compare tooling without models. Never presented as model accuracy (design §8.4 runner labelling).",
+      "configuration": {
+        "modelConfigurationId": "synthetic-stub@0",
+        "adapterId": "synthetic-test-adapter",
+        "adapterVersion": "0",
+        "preprocessingRevision": "prep-v1",
+        "decodingRevision": "dec-v1",
+        "calibrationRevision": "cal-v1"
+      }
+    }
+  }
+}

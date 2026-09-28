@@ -1,0 +1,13 @@
+{
+  "caseId": "w1-sheet-tab-cjk",
+  "candidates": [
+    {
+      "point": {
+        "x": 508,
+        "y": 1055
+      },
+      "score": 0.88
+    }
+  ],
+  "inferenceMs": 436
+}

@@ -1,0 +1,13 @@
+{
+  "caseId": "w1-filter-arrow",
+  "candidates": [
+    {
+      "point": {
+        "x": 521,
+        "y": 199
+      },
+      "score": 0.88
+    }
+  ],
+  "inferenceMs": 435
+}

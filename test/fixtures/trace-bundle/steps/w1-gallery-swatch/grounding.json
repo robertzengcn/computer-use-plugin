@@ -1,0 +1,13 @@
+{
+  "caseId": "w1-gallery-swatch",
+  "candidates": [
+    {
+      "point": {
+        "x": 732,
+        "y": 284
+      },
+      "score": 0.88
+    }
+  ],
+  "inferenceMs": 437
+}

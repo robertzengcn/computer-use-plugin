@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/eval/dataset-manifest-v1.json",
+  "title": "Evaluation dataset manifest",
+  "description": "Versioned fixture case records for offline evaluation (design §8.4). Split and consent classification are explicit fields, never inferred from filenames.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "datasetId", "version", "cases"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "datasetId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "description": { "type": "string", "maxLength": 500 },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "consentClass", "split", "taskDescription", "expected"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "consentClass": { "type": "string", "enum": ["synthetic", "reviewed"] },
+        "split": {
+          "type": "string",
+          "enum": ["regression", "calibration", "held_out"],
+          "$comment": "Never move a failing held_out case into calibration under the same evaluation version (design §8.4)."
+        },
+        "taskDescription": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "imageRef": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {
+            "path": { "type": "string", "maxLength": 512 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        "displayMetadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scaling"],
+          "properties": {
+            "scaling": { "type": "number", "exclusiveMinimum": 0 },
+            "locale": { "type": "string", "maxLength": 32 },
+            "theme": { "type": "string", "maxLength": 32 }
+          }
+        },
+        "expected": {
+          "oneOf": [
+            { "$ref": "#/$defs/expectedRegion" },
+            { "$ref": "#/$defs/expectedAbsent" },
+            { "$ref": "#/$defs/expectedAmbiguous" }
+          ]
+        }
+      }
+    },
+    "expectedRegion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "region"],
+      "properties": {
+        "kind": { "const": "region" },
+        "region": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "w", "h"],
+          "properties": {
+            "x": { "type": "number", "minimum": 0 },
+            "y": { "type": "number", "minimum": 0 },
+            "w": { "type": "number", "exclusiveMinimum": 0 },
+            "h": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "expectedAbsent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "$comment": "An absent case fails if any candidate is accepted for action (design §8.4).",
+      "properties": {
+        "kind": { "const": "absent" }
+      }
+    },
+    "expectedAmbiguous": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "ambiguous" }
+      }
+    }
+  }
+}
