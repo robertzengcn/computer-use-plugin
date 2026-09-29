@@ -9,6 +9,7 @@ import type { CommandResult, CommandSpec, ParsedArgs } from './cli.js';
 import { buildContractArchive } from './contracts/archive.js';
 import { checkDeclarationDrift } from './contracts/generate-types.js';
 import { formatConformanceReport, runConformance } from './contracts/validate.js';
+import { formatVerification, verifyRelease } from './release/verify.js';
 
 function flagString(args: ParsedArgs, name: string, fallback: string): string {
   const value = args.flags.get(name);
@@ -37,14 +38,6 @@ function spikePendingResult(detail: string): CommandResult {
   return {
     outcome: 'missingPrerequisites',
     message: `${detail} The Phase 0 spike (PRD §7.1 P0-B) must pin the exact revision before this command can run; no floating dependency is ever resolved implicitly.`,
-  };
-}
-
-/** Commands whose real implementations land with tasks 4-10; wired there. */
-function notYetWired(command: string, task: string): CommandResult {
-  return {
-    outcome: 'missingPrerequisites',
-    message: `${command} is implemented in ${task}; the command contract exists so scripts fail closed rather than silently no-op`,
   };
 }
 
@@ -154,7 +147,22 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     name: 'release:verify',
     summary: 'Validate closure, hashes, compatibility and required evidence',
-    handler: async () => notYetWired('release:verify', 'task 10 (release verifier)'),
+    handler: async (args, ctx) => {
+      const manifest = args.flags.get('manifest');
+      if (typeof manifest !== 'string') {
+        return { outcome: 'invalidArgs', message: 'release:verify requires --manifest <path>' };
+      }
+      try {
+        const report = await verifyRelease(join(ctx.cwd, manifest));
+        return {
+          outcome: report.failures.length === 0 ? 'ok' : 'failed',
+          message: formatVerification(report),
+          result: report,
+        };
+      } catch (error) {
+        return { outcome: 'failed', message: `release:verify failed: ${(error as Error).message}` };
+      }
+    },
   },
 ];
 

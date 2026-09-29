@@ -1,0 +1,85 @@
+{
+  "packageKind": "grounding-model",
+  "runtimeId": "grounding-model-gui-actor-2b-fp16",
+  "version": "0.1.0",
+  "upstream": {
+    "modelId": "microsoft/GUI-Actor-2B-Qwen2-VL",
+    "revision": "r1",
+    "licence": "mit",
+    "baseModel": {
+      "modelId": "Qwen/Qwen2-VL-2B-Instruct",
+      "licence": "apache-2.0"
+    }
+  },
+  "identity": {
+    "groundingContractVersion": 1,
+    "adapterId": "gui-actor-onnx",
+    "architecture": "gui-actor-2b-qwen2-vl",
+    "manifestVersion": 1,
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
+  },
+  "export": {
+    "pipelineVersion": "export-v1",
+    "exporter": "torch-onnx 2.6",
+    "opset": 17,
+    "quantization": "fp16"
+  },
+  "preprocessing": {
+    "patchSize": 14,
+    "mergeSize": 2,
+    "temporalPatchSize": 2,
+    "pointerPadTokenId": 151661,
+    "pixelBounds": {
+      "minWidthPx": 224,
+      "maxWidthPx": 3584,
+      "minHeightPx": 224,
+      "maxHeightPx": 3584
+    },
+    "defaultPixelBudget": 1500000
+  },
+  "graphs": [
+    {
+      "name": "pointer_head.onnx",
+      "inputs": [
+        "i"
+      ],
+      "outputs": [
+        "o"
+      ]
+    }
+  ],
+  "executionProviders": [
+    "dml",
+    "cpu"
+  ],
+  "files": [
+    {
+      "path": "pointer_head.onnx",
+      "bytes": 512,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+    }
+  ],
+  "licences": [
+    {
+      "component": "GUI-Actor weights",
+      "licence": "mit",
+      "noticePath": "LICENSES/GUI-ACTOR"
+    }
+  ],
+  "parityReport": {
+    "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "fixtureCount": 12,
+    "status": "passed"
+  },
+  "healthFixture": {
+    "imagePath": "health/fixture.png",
+    "expectedPath": "health/expected.json"
+  },
+  "limits": {
+    "maxFiles": 128,
+    "maxTotalBytes": 8589934592,
+    "maxShardBytes": 536870912
+  }
+}

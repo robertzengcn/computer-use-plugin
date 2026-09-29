@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/release/release-manifest-v1.json",
+  "title": "Computer Use release manifest",
+  "description": "The compatibility candidate closure handed to host/Hub consumers (design §7.4). The manifest itself never authorizes host activation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "releaseVersion", "sourceCommit", "contractArchive", "requiredEvidence", "artifacts"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "releaseVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9.-]+)?$" },
+    "sourceCommit": { "type": "string", "minLength": 7, "maxLength": 64 },
+    "lockDigests": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+      "propertyNames": { "type": "string", "maxLength": 128 }
+    },
+    "contractArchive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sha256"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^v[0-9]+$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "requiredEvidence": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 128 },
+      "$comment": "Suites that must be satisfied by evidence artifacts; missing evidence is unqualified, never a pass (CU-PLUGIN-21)."
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "location", "bytes", "sha256"],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["contracts", "plugin", "windows-env", "mac-native", "model", "evidence"]
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["win32-x64", "darwin-arm64"],
+          "$comment": "Required for platform roles; must match the role's target."
+        },
+        "location": { "type": "string", "maxLength": 1024 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "launchProfile": { "type": "string", "maxLength": 512 },
+        "signingIdentity": {
+          "type": "string",
+          "maxLength": 256,
+          "$comment": "Required for mac-native: signature must survive extraction (CU-PLUGIN-13)."
+        },
+        "noticesPath": { "type": "string", "maxLength": 512 },
+        "modelManifestPath": {
+          "type": "string",
+          "maxLength": 512,
+          "$comment": "Required for model roles; checked against the model-manifest contract and its licence chain (CU-INST-11)."
+        },
+        "compatibleWith": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hostAppRange": { "type": "string", "maxLength": 64 },
+            "adapterId": { "type": "string", "maxLength": 128 },
+            "runtimeId": { "type": "string", "maxLength": 128 }
+          }
+        },
+        "evidenceRequired": { "type": "boolean" },
+        "suite": {
+          "type": "string",
+          "maxLength": 128,
+          "$comment": "Evidence artifacts name the suite they satisfy."
+        },
+        "reportPath": {
+          "type": "string",
+          "maxLength": 512,
+          "$comment": "Evidence artifacts point at a machine-readable report whose qualification must be complete."
+        }
+      }
+    }
+  }
+}
