@@ -1,0 +1,32 @@
+{
+  "configId": "gui-actor-2b-int4",
+  "architecture": "gui-actor-2b-qwen2-vl",
+  "modelId": "microsoft/GUI-Actor-2B-Qwen2-VL",
+  "quantization": "int4-weight-only-decoder-fp16-vision",
+  "runtimeId": "grounding-model-gui-actor-2b-int4",
+  "pixelBudget": 1500000,
+  "preprocessing": {
+    "patchSize": 14,
+    "mergeSize": 2,
+    "temporalPatchSize": 2,
+    "pointerPadTokenId": 151661,
+    "pixelBounds": { "minWidthPx": 224, "maxWidthPx": 3584, "minHeightPx": 224, "maxHeightPx": 3584 }
+  },
+  "identity": {
+    "groundingContractVersion": 1,
+    "adapterId": "gui-actor-onnx",
+    "manifestVersion": 1,
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
+  },
+  "export": {
+    "pipelineVersion": "export-v1",
+    "opset": 17,
+    "quantizationOperator": "MatMulNBits",
+    "graphs": ["vision_encoder.onnx", "decoder_prefill.onnx", "pointer_head.onnx"]
+  },
+  "executionProviders": ["dml", "cpu"],
+  "toleranceProfile": "tolerances-v1",
+  "notes": "Independently benchmarked configuration; operator support must be verified per execution provider before publishing (design §6.3)."
+}

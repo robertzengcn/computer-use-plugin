@@ -1,0 +1,19 @@
+{
+  "profileId": "tolerances-v1",
+  "frozen": true,
+  "notes": "Chosen before evaluating held-out cases (design §6.6 step 4). A new quantization or preprocessing revision requires a new profile and requalification.",
+  "stages": {
+    "pixel_values": { "absTolerance": 1e-4, "relTolerance": 1e-5 },
+    "image_grid_thw": { "absTolerance": 0, "relTolerance": 0 },
+    "position_ids": { "absTolerance": 0, "relTolerance": 0 },
+    "image_token_embeddings": { "absTolerance": 2e-3, "relTolerance": 2e-3 },
+    "pointer_pad_hidden": { "absTolerance": 2e-3, "relTolerance": 2e-3 },
+    "attention_scores": { "absTolerance": 5e-3, "relTolerance": 5e-3 },
+    "ranked_regions": { "absTolerance": 1e-2, "relTolerance": 1e-2 },
+    "final_points": { "absTolerance": 2e-2, "relTolerance": 2e-2 }
+  },
+  "regionHitRequirement": {
+    "minAgreement": 0.95,
+    "fixtureCount": 12
+  }
+}

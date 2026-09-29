@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "status": "unfetched",
+  "notes": "Downloads are an explicit model:prepare step, never an implicit fallback inside export or replay (design §6.6). Revisions are pinned by the P0-D spike before first fetch.",
+  "models": [
+    {
+      "modelId": "microsoft/GUI-Actor-2B-Qwen2-VL",
+      "role": "default-grounder",
+      "revision": null,
+      "weightsFiles": null,
+      "licences": {
+        "weights": "mit",
+        "baseModelId": "Qwen/Qwen2-VL-2B-Instruct",
+        "baseModelLicence": "apache-2.0"
+      },
+      "commercialUse": "allowed",
+      "status": "approved-for-spike"
+    },
+    {
+      "modelId": "microsoft/GUI-Actor-3B-Qwen2.5-VL",
+      "role": "comparison-only",
+      "revision": null,
+      "weightsFiles": null,
+      "licences": {
+        "weights": "mit",
+        "baseModelId": "Qwen/Qwen2.5-VL-3B-Instruct",
+        "baseModelLicence": "qwen-research-non-commercial"
+      },
+      "commercialUse": "blocked",
+      "status": "blocked-pending-commercial-licence",
+      "notes": "A fine-tune licence never overrides its base model (PRD §8, CU-INST-11)."
+    },
+    {
+      "modelId": "microsoft/GUI-Actor-7B-Qwen2.5-VL",
+      "role": "future-high-memory-tier",
+      "revision": null,
+      "weightsFiles": null,
+      "licences": {
+        "weights": "mit",
+        "baseModelId": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "baseModelLicence": "apache-2.0"
+      },
+      "commercialUse": "allowed",
+      "status": "not-qualified"
+    }
+  ]
+}
