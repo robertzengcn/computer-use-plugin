@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "status": "unpinned",
+  "component": "ghost-os-helper",
+  "upstream": "https://github.com/ghostwright/ghost-os",
+  "inspectedConstraints": {
+    "swiftTools": "6.2",
+    "macosDeploymentTarget": "14",
+    "licence": "mit",
+    "inspectedOn": "2026-09-26"
+  },
+  "selectedRevision": null,
+  "sourceSha256": null,
+  "patchSetDigest": null,
+  "dependencyLock": null,
+  "notes": "Either a maintained fork or a patch set over a pinned checkout is acceptable (design §5.1); fetching main at build time is forbidden. The P0-E spike records the decision before any of this is filled in."
+}

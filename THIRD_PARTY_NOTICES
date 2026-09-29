@@ -1,0 +1,31 @@
+THIRD-PARTY NOTICES — aifetchly-computer-use
+=============================================
+
+This repository ships third-party code and model artefacts under the licences
+below. Entries marked "pin pending" are completed when the Phase 0 spikes pin
+the exact upstream revision; no licence claim is invented before then.
+
+Developer tooling (Node)
+------------------------
+- TypeScript — Apache License 2.0 — https://github.com/microsoft/TypeScript
+- Vitest — MIT License — https://github.com/vitest-dev/vitest
+- ESLint / typescript-eslint — MIT License — https://github.com/eslint/eslint
+- Ajv — MIT License — https://github.com/ajv-validator/ajv
+- json-schema-to-typescript — MIT License — https://github.com/bcherny/json-schema-to-typescript
+- adm-zip — MIT License — https://github.com/cthackers/adm-zip
+
+Model artefacts (delivered as data files, never as executable code)
+-------------------------------------------------------------------
+- GUI-Actor weights (microsoft/GUI-Actor-2B-Qwen2-VL) — MIT License
+  https://github.com/microsoft/GUI-Actor
+- Qwen2-VL-2B-Instruct (base model of GUI-Actor-2B) — Apache License 2.0
+  https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct
+- GUI-Actor-3B / Qwen2.5-VL-3B-Instruct — BLOCKED for distribution:
+  Qwen Research License is non-commercial; a fine-tune's MIT licence does not
+  override its base model (PRD CU-INST-11). Listed for benchmark comparison
+  only, on licensed developer machines, and never published.
+
+Native backends (pin pending — notices completed at pin time)
+-------------------------------------------------------------
+- Windows-MCP — pin pending (P0-C) — https://github.com/CursorTouch/Windows-MCP
+- Ghost OS — MIT Licence, pin pending (P0-E) — https://github.com/ghostwright/ghost-os

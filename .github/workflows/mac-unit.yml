@@ -1,0 +1,29 @@
+name: mac-unit
+# Design §8.5: Mac candidate. Lock/allowlist consistency checks; the Swift
+# build activates when the P0-E spike pins the helper source.
+on:
+  push:
+    branches: [main]
+    paths: ['adapters/macos/**', '.github/workflows/mac-unit.yml']
+  pull_request:
+    paths: ['adapters/macos/**', '.github/workflows/mac-unit.yml']
+
+jobs:
+  consistency:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scaffolds fail closed
+        run: |
+          status=$(node -e "console.log(JSON.parse(require('fs').readFileSync('adapters/macos/ghost-os/upstream.lock','utf8')).status)")
+          if [ "$status" != "unpinned" ]; then
+            echo "unexpected lock status '$status': CI must be updated with the P0-E decision" >&2
+            exit 1
+          fi
+          node -e "
+            const allow = require('./adapters/macos/ghost-os/tool-allowlist.json');
+            const overlap = allow.allow.filter((t) => allow.deny.includes(t));
+            if (overlap.length) { console.error('allow/deny overlap', overlap); process.exit(1); }
+            if (allow.policy !== 'deny-by-default') { console.error('bad policy'); process.exit(1); }
+            console.log('macOS scaffolds consistent');
+          "

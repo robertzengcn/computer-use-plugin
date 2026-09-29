@@ -1,0 +1,26 @@
+name: release-verify
+# Design §8.5: publication/promotion. Trusted dispatch only; never publishes —
+# it verifies a candidate closure and its required evidence.
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: 'Path or URL of the release manifest to verify'
+        required: true
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Verify candidate closure
+        run: node dist/tooling/cli.js release:verify --manifest "${{ inputs.manifest }}"

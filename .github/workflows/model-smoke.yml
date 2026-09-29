@@ -1,0 +1,29 @@
+name: model-smoke
+# Design §8.5: model tooling release. Small synthetic tests; no weights.
+on:
+  push:
+    branches: [main]
+    paths: ['grounding/**', '.github/workflows/model-smoke.yml']
+  pull_request:
+    paths: ['grounding/**', '.github/workflows/model-smoke.yml']
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: grounding/uv.lock
+      - name: Sync model engineering environment
+        working-directory: grounding
+        run: |
+          uv python install 3.14
+          uv sync --locked
+      - name: Synthetic decode/shard/manifest/parity tests
+        working-directory: grounding
+        run: uv run pytest -q
+      - name: Lint
+        working-directory: grounding
+        run: uv run ruff check src tests

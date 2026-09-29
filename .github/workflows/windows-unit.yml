@@ -1,0 +1,30 @@
+name: windows-unit
+# Design §8.5: Windows candidate. Unit/serialization only — native input tests
+# are a separate explicit qualification workflow, never a default PR check.
+on:
+  push:
+    branches: [main]
+    paths: ['adapters/windows/**', '.github/workflows/windows-unit.yml']
+  pull_request:
+    paths: ['adapters/windows/**', '.github/workflows/windows-unit.yml']
+
+jobs:
+  unit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: adapters/windows/uv.lock
+      - name: Sync pinned environment
+        working-directory: adapters/windows
+        run: |
+          uv python install 3.14
+          uv sync --locked
+      - name: Unit and serialization tests (no native input)
+        working-directory: adapters/windows
+        run: uv run pytest -q
+      - name: Lint
+        working-directory: adapters/windows
+        run: uv run ruff check src tests

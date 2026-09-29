@@ -1,0 +1,27 @@
+name: portable-checks
+# Design §8.5: every schema/tooling release. Node-only; no input, no weights.
+on:
+  push:
+    branches: [main]
+    paths: ['tooling/**', 'contracts/**', 'eval/**', 'test/**', 'plugin/**', 'package.json', 'package-lock.json', 'tsconfig.json', 'eslint.config.js', 'vitest.config.ts', '.github/workflows/portable-checks.yml']
+  pull_request:
+    paths: ['tooling/**', 'contracts/**', 'eval/**', 'test/**', 'plugin/**', 'package.json', 'package-lock.json', 'tsconfig.json', 'eslint.config.js', 'vitest.config.ts', '.github/workflows/portable-checks.yml']
+
+jobs:
+  node:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm run contracts:check
+      - run: node dist/eval/cli.js replay --bundle test/fixtures/trace-bundle --runner recorded --dataset w1-smoke

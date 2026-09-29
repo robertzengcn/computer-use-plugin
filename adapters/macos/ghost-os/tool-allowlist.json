@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "policy": "deny-by-default",
+  "notes": "Reviewed Ghost surface per design §5.2. Vision tools and every implicit sidecar fallback are disabled: AX failure must return a typed unresolved-target error to the supervisor, which may call its selected grounder. Recipes and learning are unreachable. The host wrapper enforces the same allowlist on tools/list and tools/call.",
+  "allow": [
+    "ghost_context",
+    "ghost_state",
+    "ghost_find",
+    "ghost_read",
+    "ghost_inspect",
+    "ghost_element_at",
+    "ghost_screenshot",
+    "ghost_click",
+    "ghost_type",
+    "ghost_press",
+    "ghost_hotkey",
+    "ghost_scroll",
+    "ghost_hover",
+    "ghost_drag",
+    "ghost_focus"
+  ],
+  "deny": [
+    "ghost_ground",
+    "ghost_parse_screen",
+    "ghost_run",
+    "ghost_recipe_save",
+    "ghost_recipe_list",
+    "ghost_recipe_delete",
+    "ghost_learn_start",
+    "ghost_learn_stop",
+    "ghost_window_move",
+    "ghost_window_resize",
+    "ghost_window_close",
+    "ghost_annotate",
+    "ghost_long_press",
+    "ghost_wait"
+  ]
+}
