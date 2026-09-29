@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "policy": "deny-by-default",
+  "allow": [
+    "screenshot",
+    "display_state",
+    "list_windows",
+    "focus_window",
+    "click",
+    "type_text",
+    "scroll",
+    "move_to",
+    "drag",
+    "press_key",
+    "process_integrity",
+    "window_at_point"
+  ],
+  "deny": [
+    "powershell",
+    "run_powershell",
+    "registry_read",
+    "registry_write",
+    "read_file",
+    "write_file",
+    "list_directory",
+    "delete_file",
+    "start_process",
+    "kill_process",
+    "list_processes",
+    "send_telemetry"
+  ],
+  "notes": "Reviewed private surface only (design §4): the host wrapper enforces the same allowlist on tools/list and tools/call. process_integrity and window_at_point are plugin-added read-only extensions."
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "./upstream-lock.schema.json",
+  "status": "unpinned",
+  "component": "windows-mcp-backend",
+  "upstream": "https://github.com/CursorTouch/Windows-MCP",
+  "selectedRevision": null,
+  "sourceSha256": null,
+  "patchSetDigest": null,
+  "pythonVersion": null,
+  "dependencyLockSha256": null,
+  "notes": "Phase 0 work package P0-C selects the immutable revision and its exact interpreter (upstream main declares python >=3.14 as of 2026-09-27). Until status is 'pinned', entrypoint and packaging fail closed."
+}

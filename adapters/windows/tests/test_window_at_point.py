@@ -1,0 +1,92 @@
+"""Window-at-point resolution with a mocked Win32 chain (design §4)."""
+
+from __future__ import annotations
+
+import pytest
+
+from aifetchly_windows.integrity import IntegrityError
+from aifetchly_windows.window_at_point import (
+    CtypesWindowApi,
+    DesktopPoint,
+    WindowAtPointError,
+    resolve_window_at_point,
+)
+
+
+class FakeWindowApi:
+    def __init__(
+        self,
+        window_by_point: dict[tuple[int, int], int] | None = None,
+        root_by_window: dict[int, int] | None = None,
+        pid_by_window: dict[int, int] | None = None,
+    ) -> None:
+        self.window_by_point = window_by_point or {}
+        self.root_by_window = root_by_window or {}
+        self.pid_by_window = pid_by_window or {}
+
+    def window_from_point(self, point: DesktopPoint) -> int:
+        return self.window_by_point.get((point.x, point.y), 0)
+
+    def ancestor_root(self, window_handle: int) -> int:
+        return self.root_by_window.get(window_handle, 0)
+
+    def window_thread_process_id(self, window_handle: int) -> tuple[int, int]:
+        pid = self.pid_by_window.get(window_handle, 0)
+        if pid == 0:
+            raise OSError("invalid window handle (closed?)")
+        return (1, pid)
+
+
+def test_resolves_top_level_owner() -> None:
+    api = FakeWindowApi(
+        window_by_point={(944, 331): 0x00D1},
+        root_by_window={0x00D1: 0x00F0},
+        pid_by_window={0x00F0: 4210},
+    )
+    result = resolve_window_at_point(DesktopPoint(944, 331), api, own_process_id=7)
+    assert result.window_handle == 0x00F0
+    assert result.process_id == 4210
+    assert result.is_own_process is False
+
+
+def test_flags_own_window() -> None:
+    api = FakeWindowApi(
+        window_by_point={(10, 10): 5},
+        root_by_window={5: 5},
+        pid_by_window={5: 7},
+    )
+    result = resolve_window_at_point(DesktopPoint(10, 10), api, own_process_id=7)
+    assert result.is_own_process is True
+
+
+def test_no_window_at_point_is_typed_error() -> None:
+    api = FakeWindowApi()
+    with pytest.raises(WindowAtPointError, match="no window at point"):
+        resolve_window_at_point(DesktopPoint(0, 0), api)
+
+
+def test_closed_handle_reuse_fails_explicitly() -> None:
+    api = FakeWindowApi(
+        window_by_point={(50, 50): 9},
+        root_by_window={9: 9},
+        pid_by_window={},  # handle died between calls
+    )
+    with pytest.raises(WindowAtPointError, match="owner resolution failed"):
+        resolve_window_at_point(DesktopPoint(50, 50), api)
+
+
+def test_invalid_owner_pid_rejected() -> None:
+    class ZeroPidApi(FakeWindowApi):
+        def window_thread_process_id(self, window_handle: int) -> tuple[int, int]:
+            return (1, 0)
+
+    api = ZeroPidApi(window_by_point={(1, 1): 3}, root_by_window={3: 3})
+    with pytest.raises(WindowAtPointError, match="invalid owner pid"):
+        resolve_window_at_point(DesktopPoint(1, 1), api)
+
+
+def test_ctypes_stub_fails_closed_off_windows() -> None:
+    # On the scaffold the ctypes backend is deliberately not wired: the pinned
+    # upstream revision (P0-C) defines the final binding, so no guessing here.
+    with pytest.raises((WindowAtPointError, IntegrityError)):
+        resolve_window_at_point(DesktopPoint(1, 1), CtypesWindowApi())  # type: ignore[arg-type]
