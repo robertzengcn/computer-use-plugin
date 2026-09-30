@@ -18,12 +18,18 @@ def test_single_peak_grid_yields_center_candidate() -> None:
     assert len(candidates) == 1
     candidate = candidates[0]
     assert candidate.patch_count == 3
-    # activation-weighted center, normalized [0,1] over a 5x5 grid
+    # patch i covers [i, i+1): centre is (i + 0.5) / grid_size (design §6.2)
     weight_sum = 1.0 + 0.9 + 0.8
-    expected_x = (1.0 * 2 + 0.9 * 3 + 0.8 * 2) / weight_sum / 4
-    expected_y = (1.0 * 2 + 0.9 * 2 + 0.8 * 3) / weight_sum / 4
-    assert candidate.x == pytest.approx(expected_x)
-    assert candidate.y == pytest.approx(expected_y)
+    mean_col = (1.0 * 2 + 0.9 * 3 + 0.8 * 2) / weight_sum
+    mean_row = (1.0 * 2 + 0.9 * 2 + 0.8 * 3) / weight_sum
+    assert candidate.x == pytest.approx((mean_col + 0.5) / 5)
+    assert candidate.y == pytest.approx((mean_row + 0.5) / 5)
+
+def test_single_patch_grid_maps_to_image_centre() -> None:
+    # E-5 regression: a 1x1 grid is the whole image; its centre is (0.5, 0.5),
+    # never the corner (0, 0).
+    assert decode_candidates([[1.0]])[0].x == pytest.approx(0.5)
+    assert decode_candidates([[1.0]])[0].y == pytest.approx(0.5)
 
 
 def test_two_separated_blobs_rank_by_mean_activation() -> None:
@@ -55,13 +61,22 @@ def test_all_zero_grid_returns_no_candidates() -> None:
     assert decode_candidates([[0.0, 0.0], [0.0, 0.0]]) == []
 
 
-def test_tie_ordering_is_deterministic() -> None:
+def test_tie_ordering_is_deterministic_and_breaks_on_top_left() -> None:
     grid = [[0.0] * 6 for _ in range(1)]
     grid[0][1] = 0.5
     grid[0][4] = 0.5
     first = decode_candidates(grid)
     second = decode_candidates(grid)
     assert [(c.x, c.y) for c in first] == [(c.x, c.y) for c in second]
+    # Equal mean activation: the left patch ranks first (top-left tie-break).
+    assert first[0].x < first[1].x
+
+    grid2 = [[0.0] * 3 for _ in range(3)]
+    grid2[2][2] = 0.5  # lower-right first in scan order? no: scan is row-major,
+    grid2[0][0] = 0.5   # so (0,0) is collected first — but tie-break is explicit
+    ranked = decode_candidates(grid2)
+    assert ranked[0].y == pytest.approx(0.5 / 3)
+    assert ranked[0].x == pytest.approx(0.5 / 3)
 
 
 def test_malformed_grids_raise_typed_errors() -> None:

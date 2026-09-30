@@ -26,11 +26,17 @@ def integrity_sid(rid: int) -> bytes:
         (0x2000, "medium"),
         (0x3000, "high"),
         (0x4000, "system"),
-        (0x5000, "system"),  # protected-process range collapses to system
     ],
 )
 def test_supported_levels(rid: int, level: str) -> None:
     assert parse_integrity_level(integrity_sid(rid)) == level
+
+
+@pytest.mark.parametrize("rid", [0x5000, 0x2100, 0x6000])
+def test_unknown_rids_fail_explicitly(rid: int) -> None:
+    # E-6 regression: protected-process and in-between RIDs are never guessed.
+    with pytest.raises(IntegrityError, match="unsupported integrity RID"):
+        parse_integrity_level(integrity_sid(rid))
 
 
 @pytest.mark.parametrize(

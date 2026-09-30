@@ -1,6 +1,8 @@
 name: mac-unit
-# Design §8.5: Mac candidate. Lock/allowlist consistency checks; the Swift
-# build activates when the P0-E spike pins the helper source.
+# Design §8.5: Mac candidate. Lock/allowlist consistency; the status check
+# reports pin state instead of encoding "unpinned" as the success condition —
+# a future pin (P0-E) must be able to pass CI, not break it.
+
 on:
   push:
     branches: [main]
@@ -13,11 +15,14 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Scaffolds fail closed
+      - name: Report lock pin state and check allowlist consistency
         run: |
           status=$(node -e "console.log(JSON.parse(require('fs').readFileSync('adapters/macos/ghost-os/upstream.lock','utf8')).status)")
-          if [ "$status" != "unpinned" ]; then
-            echo "unexpected lock status '$status': CI must be updated with the P0-E decision" >&2
+          echo "ghost-os upstream.lock status: $status"
+          if [ "$status" = "pinned" ]; then
+            echo "::notice::helper pinned — P0-E decision recorded; Swift package build/test must be added to this job"
+          elif [ "$status" != "unpinned" ]; then
+            echo "::error::unknown lock status '$status'" >&2
             exit 1
           fi
           node -e "

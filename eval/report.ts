@@ -200,7 +200,7 @@ export function renderHtmlReport(report: EvaluationReport): string {
   const aggregate = report.aggregate;
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>Eval report ${report.run.datasetId}</title>
-<style>body{font-family:system-ui,sans-serif;margin:2rem}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 8px;font-size:14px}</code></style>
+<style>body{font-family:system-ui,sans-serif;margin:2rem}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 8px;font-size:14px}</style>
 </head><body>
 <h1>Computer Use evaluation report</h1>
 <p>dataset <b>${report.run.datasetId}</b> v${report.run.datasetVersion} — mode ${report.run.mode} — runner ${report.run.runnerLabel}</p>

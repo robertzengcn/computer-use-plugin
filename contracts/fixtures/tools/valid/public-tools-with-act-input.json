@@ -1,0 +1,49 @@
+{
+  "contractVersion": 1,
+  "tools": [
+    {
+      "name": "computer_capabilities",
+      "description": "Report backend versions, supported actions, permissions and grounder state."
+    },
+    {
+      "name": "computer_start_session",
+      "description": "Start a supervised session on a user-selected target window."
+    },
+    {
+      "name": "computer_observe",
+      "description": "Return a structured, bounded observation of the session target."
+    },
+    {
+      "name": "computer_find",
+      "description": "Resolve a target description to an opaque handle via accessibility or vision."
+    },
+    {
+      "name": "computer_act",
+      "description": "Execute one authorized atomic action against a resolved target handle.",
+      "input": {
+        "sessionId": "sess-0001",
+        "targetHandle": "tgt-3f9a",
+        "actionId": "act-0009",
+        "action": {
+          "kind": "click"
+        }
+      }
+    },
+    {
+      "name": "computer_verify",
+      "description": "Check an expected state against a fresh observation."
+    },
+    {
+      "name": "computer_request_handoff",
+      "description": "Revoke automatic input until a trusted resume."
+    },
+    {
+      "name": "computer_resume_after_handoff",
+      "description": "Resume with host approval and a fresh observation."
+    },
+    {
+      "name": "computer_stop_session",
+      "description": "Idempotently cancel and release the session."
+    }
+  ]
+}

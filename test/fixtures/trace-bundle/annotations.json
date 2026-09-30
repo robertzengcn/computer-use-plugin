@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "cases": {
+    "w1-name-box-100": {
+      "kind": "region",
+      "region": {
+        "x": 24,
+        "y": 28,
+        "w": 140,
+        "h": 22
+      }
+    },
+    "w1-sheet-tab-cjk": {
+      "kind": "region",
+      "region": {
+        "x": 460,
+        "y": 1042,
+        "w": 96,
+        "h": 26
+      }
+    },
+    "w1-filter-arrow": {
+      "kind": "region",
+      "region": {
+        "x": 512,
+        "y": 190,
+        "w": 18,
+        "h": 18
+      }
+    },
+    "w1-ribbon-icon-only": {
+      "kind": "region",
+      "region": {
+        "x": 232,
+        "y": 118,
+        "w": 32,
+        "h": 32
+      }
+    },
+    "w1-gallery-swatch": {
+      "kind": "region",
+      "region": {
+        "x": 700,
+        "y": 260,
+        "w": 64,
+        "h": 48
+      }
+    },
+    "w1-header-cell-zh": {
+      "kind": "region",
+      "region": {
+        "x": 64,
+        "y": 188,
+        "w": 120,
+        "h": 24
+      }
+    },
+    "w1-absent-collapsed-group": {
+      "kind": "absent"
+    },
+    "w1-ambiguous-repeated-label": {
+      "kind": "ambiguous"
+    }
+  }
+}

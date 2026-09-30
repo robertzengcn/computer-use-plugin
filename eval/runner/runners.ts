@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { Point, Region } from '../metrics/hits.js';
+import type { Point } from '../metrics/hits.js';
 
 export interface RunnerConfiguration {
   readonly modelConfigurationId: string;
@@ -72,58 +72,53 @@ export function recordedRunner(
     if (step === undefined) {
       throw new Error(`no recorded evidence for case '${caseId}'`);
     }
-    if (step.configuration.modelConfigurationId !== profile.configuration.modelConfigurationId) {
-      throw new IncompatibleConfigurationException(
-        profile.configuration.modelConfigurationId,
-        step.configuration.modelConfigurationId,
-      );
+    // Design §3.6: replay requires the exact configuration identity; a
+    // mismatched revision fails and is never substituted.
+    const fields: readonly [keyof RunnerConfiguration, string][] = [
+      ['modelConfigurationId', 'model configuration'],
+      ['adapterId', 'adapter id'],
+      ['adapterVersion', 'adapter version'],
+      ['preprocessingRevision', 'preprocessing revision'],
+      ['decodingRevision', 'decoding revision'],
+      ['calibrationRevision', 'calibration revision'],
+    ];
+    for (const [field, label] of fields) {
+      if (step.configuration[field] !== profile.configuration[field]) {
+        throw new IncompatibleConfigurationException(
+          `${label} ${String(profile.configuration[field])}`,
+          `${label} ${String(step.configuration[field])}`,
+        );
+      }
     }
     return { caseId, candidates: step.candidates, inferenceMs: step.inferenceMs };
   };
 }
 
 /**
- * Deterministic stub: hash(caseId ‖ configId) seeds candidate placement.
- * ~3 of 4 region cases hit, a fixed fraction of absent cases false-accept,
- * purely so compare/replay tooling has reproducible numbers.
+ * Deterministic stub: hash(caseId ‖ configId) seeds candidate placement on a
+ * fixed 1000×1000 virtual canvas. It never reads the case's expected label —
+ * the point is placed from the hash alone and then scored, so compare-mode
+ * numbers are independent (labelled as stub output, never model accuracy).
  */
-export function syntheticRunner(profile: RunnerProfile): (input: SyntheticInput) => GroundingCaseResult {
-  return (input: SyntheticInput): GroundingCaseResult => {
+export function syntheticRunner(
+  profile: RunnerProfile,
+): (caseId: string) => GroundingCaseResult {
+  return (caseId: string): GroundingCaseResult => {
     const seed = createHash('sha256')
-      .update(`${input.caseId}:${profile.configuration.modelConfigurationId}`)
+      .update(`${caseId}:${profile.configuration.modelConfigurationId}`)
       .digest();
     const first = seed[0] ?? 0;
     const second = seed[1] ?? 0;
     const third = seed[2] ?? 0;
-    if (input.expected.kind === 'absent') {
-      const candidates = second % 5 === 0 ? [{ point: { x: 1, y: 1 }, score: 0.5 }] : [];
-      return { caseId: input.caseId, candidates, inferenceMs: 100 + (third % 400) };
-    }
-    if (input.expected.kind === 'ambiguous') {
-      return { caseId: input.caseId, candidates: [], inferenceMs: 100 + (third % 400) };
-    }
-    const region = input.expected.region as Region;
-    const hit = first % 4 !== 0;
-    const point: Point = hit
-      ? {
-          x: region.x + region.w / 2,
-          y: region.y + region.h / 2,
-        }
-      : { x: region.x + region.w + 50, y: region.y + region.h + 50 };
+    const x = ((first * 256 + second) / 65536) * 1000;
+    const y = ((third * 256 + (seed[3] ?? 0)) / 65536) * 1000;
+    const emitsCandidate = first % 8 !== 0;
     return {
-      caseId: input.caseId,
-      candidates: [{ point, score: 0.9 }],
+      caseId,
+      candidates: emitsCandidate ? [{ point: { x, y }, score: 0.5 }] : [],
       inferenceMs: 150 + (second % 350),
     };
   };
-}
-
-export interface SyntheticInput {
-  readonly caseId: string;
-  readonly expected:
-    | { readonly kind: 'region'; readonly region: Region }
-    | { readonly kind: 'absent' }
-    | { readonly kind: 'ambiguous' };
 }
 
 export interface TraceBundleManifest {
@@ -154,6 +149,7 @@ export interface GroundingRecord {
 export async function loadTraceBundle(bundleDir: string): Promise<{
   manifest: TraceBundleManifest;
   records: readonly GroundingRecord[];
+  annotations: ReadonlyMap<string, BundleAnnotation>;
 }> {
   const manifest = JSON.parse(await readFile(join(bundleDir, 'manifest.json'), 'utf8')) as TraceBundleManifest;
   const records: GroundingRecord[] = [];
@@ -164,5 +160,19 @@ export async function loadTraceBundle(bundleDir: string): Promise<{
     const grounding = JSON.parse(await readFile(join(bundleDir, step.grounding), 'utf8')) as GroundingRecord;
     records.push(grounding);
   }
-  return { manifest, records };
+  const annotations = new Map<string, BundleAnnotation>();
+  const annotationsRaw = await readFile(join(bundleDir, 'annotations.json'), 'utf8').catch(() => undefined);
+  if (annotationsRaw !== undefined) {
+    const parsed = JSON.parse(annotationsRaw) as { cases?: Record<string, BundleAnnotation> };
+    for (const [caseId, annotation] of Object.entries(parsed.cases ?? {})) {
+      annotations.set(caseId, annotation);
+    }
+  }
+  return { manifest, records, annotations };
+}
+
+/** Human label for one recorded case (design §3.6 annotations.json). */
+export interface BundleAnnotation {
+  readonly kind: 'region' | 'absent' | 'ambiguous';
+  readonly region?: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }

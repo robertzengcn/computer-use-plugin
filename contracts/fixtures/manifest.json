@@ -189,6 +189,12 @@
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/invalid/public-tools-duplicate-name.json",
+      "expectation": "invalid",
+      "description": "nine entries with a duplicated name and a missing tool are rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
       "file": "tools/invalid/public-tools-missing-tool.json",
       "expectation": "invalid",
       "description": "public-tools-missing-tool (invalid)"
@@ -204,6 +210,12 @@
       "file": "tools/valid/public-tools-v1.json",
       "expectation": "valid",
       "description": "public-tools-v1 (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/valid/public-tools-with-act-input.json",
+      "expectation": "valid",
+      "description": "act input uses a target handle, never coordinates"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/traces/trace-manifest-v1.json",

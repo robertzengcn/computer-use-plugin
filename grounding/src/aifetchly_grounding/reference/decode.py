@@ -52,17 +52,19 @@ def decode_candidates(
 
     height = len(grid)
     visited: list[list[bool]] = [[False] * width for _ in range(height)]
-    regions: list[Candidate] = []
+    regions_with_origin: list[tuple[Candidate, int, int]] = []
     for start_row in range(height):
         for start_col in range(width):
             if visited[start_row][start_col] or grid[start_row][start_col] < threshold:
                 continue
-            regions.append(_collect_region(grid, visited, start_row, start_col, threshold))
+            regions_with_origin.append(
+                _collect_region(grid, visited, start_row, start_col, threshold),
+            )
 
-    # Rank by mean activation descending; ties break on top-left patch for
-    # deterministic output (same input always yields the same order).
-    regions.sort(key=lambda region: (-region.mean_activation, region.patch_count))
-    return regions[:max_candidates]
+    # Rank by mean activation descending; ties break on the top-left patch of
+    # each region so identical inputs always yield the identical order.
+    regions_with_origin.sort(key=lambda item: (-item[0].mean_activation, item[1], item[2]))
+    return [region for region, _, _ in regions_with_origin[:max_candidates]]
 
 
 def _collect_region(
@@ -71,7 +73,7 @@ def _collect_region(
     start_row: int,
     start_col: int,
     threshold: float,
-) -> Candidate:
+) -> tuple[Candidate, int, int]:
     height = len(grid)
     width = len(grid[0])
     stack: list[tuple[int, int]] = [(start_row, start_col)]
@@ -103,11 +105,15 @@ def _collect_region(
             ):
                 stack.append((next_row, next_col))
 
-    height_norm = max(height - 1, 1)
-    width_norm = max(width - 1, 1)
-    return Candidate(
-        x=weighted_col / activation_sum / width_norm if activation_sum else 0.0,
-        y=weighted_row / activation_sum / height_norm if activation_sum else 0.0,
+    # Patch i covers [i, i+1) of the grid, so its centre in normalized [0, 1]
+    # model-input space is (i + 0.5) / grid_size; the activation-weighted
+    # centre follows the same mapping (design §6.2).
+    mean_row = weighted_row / activation_sum if activation_sum else 0.0
+    mean_col = weighted_col / activation_sum if activation_sum else 0.0
+    candidate = Candidate(
+        x=(mean_col + 0.5) / width,
+        y=(mean_row + 0.5) / height,
         mean_activation=activation_sum / count if count else 0.0,
         patch_count=count,
     )
+    return candidate, min_row, min_col

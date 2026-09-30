@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import { sha256File } from './hash.js';
 
@@ -60,6 +60,23 @@ function manifestValidator(schemaPath: string): ValidateFunction {
   return cachedValidator;
 }
 
+/**
+ * True when `target` (relative to the manifest directory, or absolute within
+ * it) stays inside the release tree. A plain startsWith check would accept
+ * sibling directories sharing a prefix (`/rel` vs `/rel-evil`), so containment
+ * is decided on the normalized relative path.
+ */
+function insideRelease(manifestDir: string, target: string): boolean {
+  if (target.length === 0) {
+    return false;
+  }
+  if (isAbsolute(target)) {
+    return false;
+  }
+  const rel = relative(manifestDir, resolve(manifestDir, target));
+  return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
+}
+
 export async function verifyRelease(
   manifestPath: string,
   schemaPath: string = join(process.cwd(), SCHEMA_RELATIVE_PATH),
@@ -88,14 +105,16 @@ export async function verifyRelease(
   for (const artifact of typed.artifacts) {
     const label = `${artifact.role}:${artifact.location}`;
     if (artifact.role === 'evidence') {
+      if (!insideRelease(manifestDir, artifact.reportPath ?? artifact.location)) {
+        failures.push({ gate: 'closure', detail: `${label}: reportPath escapes the release directory` });
+      }
       continue;
     }
-    // Path containment: artifact locations must stay inside the release tree.
-    const absLocation = resolve(manifestDir, artifact.location);
-    if (isAbsolute(artifact.location) || !absLocation.startsWith(manifestDir)) {
+    if (!insideRelease(manifestDir, artifact.location)) {
       failures.push({ gate: 'closure', detail: `${label}: location escapes the release directory` });
       continue;
     }
+    const absLocation = resolve(manifestDir, artifact.location);
     const info = await stat(absLocation).catch(() => undefined);
     if (info === undefined) {
       failures.push({ gate: 'closure', detail: `${label}: file missing` });
@@ -122,7 +141,19 @@ export async function verifyRelease(
     if (artifact.role === 'mac-native' && (artifact.signingIdentity ?? '').length === 0) {
       failures.push({ gate: 'platform', detail: `${label}: mac-native requires a signing identity` });
     }
+    if (artifact.noticesPath !== undefined && !insideRelease(manifestDir, artifact.noticesPath)) {
+      failures.push({ gate: 'closure', detail: `${label}: noticesPath escapes the release directory` });
+    }
     if (artifact.role === 'model') {
+      if (
+        artifact.modelManifestPath !== undefined &&
+        !insideRelease(manifestDir, artifact.modelManifestPath)
+      ) {
+        failures.push({
+          gate: 'closure',
+          detail: `${label}: modelManifestPath escapes the release directory`,
+        });
+      }
       const licenceFailure = await checkModelLicence(manifestDir, artifact.modelManifestPath, label);
       if (licenceFailure !== undefined) {
         failures.push(licenceFailure);
@@ -186,6 +217,15 @@ async function checkModelLicence(
     upstream?: { licence?: string; baseModel?: { licence?: string } };
     licences?: { licence: string }[];
   };
+  // CU-INST-11 requires BOTH the weights licence and the base-model licence:
+  // a fine-tune's licence never overrides its base model, so an absent base
+  // licence is a failure, not a pass.
+  if (modelManifest.upstream?.licence === undefined) {
+    return { gate: 'licence', detail: `${label}: model manifest has no upstream.licence` };
+  }
+  if (modelManifest.upstream?.baseModel?.licence === undefined) {
+    return { gate: 'licence', detail: `${label}: model manifest has no upstream.baseModel.licence` };
+  }
   const licences = [
     modelManifest.upstream?.licence,
     modelManifest.upstream?.baseModel?.licence,
@@ -196,9 +236,6 @@ async function checkModelLicence(
       gate: 'licence',
       detail: `${label}: non-commercial licence in the chain blocks publication (CU-INST-11)`,
     };
-  }
-  if (licences.every((licence) => licence === undefined)) {
-    return { gate: 'licence', detail: `${label}: model manifest records no licences` };
   }
   return undefined;
 }

@@ -65,6 +65,20 @@ describe('eval replay (CU-PLUGIN-12)', () => {
     expect(code).toBe(2);
   });
 
+  it('the documented §2.2 argv (no --dataset) scores via bundle annotations.json', async () => {
+    const { io, stdout } = capture();
+    const code = await runCli(
+      ['--json', 'replay', '--bundle', BUNDLE, '--runner', 'recorded'],
+      evalCommands,
+      io,
+    );
+    expect(code).toBe(0);
+    const envelope = JSON.parse(stdout.join('') || '{}');
+    expect(envelope.status).toBe('ok');
+    expect(envelope.result.run.datasetId).toMatch(/annotations/);
+    expect(envelope.result.aggregate.executed).toBe(8);
+  });
+
   it('marks a skipped required case as missing evidence, never a pass (CU-PLUGIN-19)', async () => {
     // Recorded runner throws on unknown case; the report layer records the skip.
     const { io } = capture();

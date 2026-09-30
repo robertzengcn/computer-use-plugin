@@ -64,8 +64,13 @@ describe('declaration generation', () => {
 
 describe('contract archive (contracts:build)', () => {
   it('produces a checksummed closure and zip with identical contents', async () => {
+    // buildContractArchive regenerates declarations under <root>/contracts —
+    // run it against a temp copy so parallel drift tests never observe the
+    // in-place rewrite (tests use temporary directories, design §2.1).
+    const tempRoot = await mkdtemp(join(tmpdir(), 'cu-archive-repo-'));
+    await cp(join(REPO, 'contracts'), join(tempRoot, 'contracts'), { recursive: true });
     const outDir = await mkdtemp(join(tmpdir(), 'cu-archive-'));
-    const result = await buildContractArchive(REPO, outDir);
+    const result = await buildContractArchive(tempRoot, outDir);
     expect(result.version).toBe('v1');
     expect(result.fileCount).toBeGreaterThanOrEqual(40);
 
@@ -84,5 +89,6 @@ describe('contract archive (contracts:build)', () => {
     const zipBytes = await readFile(result.zipPath);
     expect(result.zipSha256).toBe(createHash('sha256').update(zipBytes).digest('hex'));
     await rm(outDir, { recursive: true, force: true });
+    await rm(tempRoot, { recursive: true, force: true });
   });
 });

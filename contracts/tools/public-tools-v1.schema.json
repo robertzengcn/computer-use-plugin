@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
   "title": "Public tool surface",
-  "description": "The complete model-visible tool surface for computer use (design §3.1). Exactly these nine tools; no raw backend tool is advertised as a planner tool (CU-PLUGIN-02).",
+  "description": "The complete model-visible tool surface for computer use (design §3.1). Exactly these nine tools: the array holds nine entries and each required name appears at least once, so the surface is enforced exactly. No raw backend tool is advertised as a planner tool (CU-PLUGIN-02).",
   "type": "object",
   "additionalProperties": false,
   "required": ["contractVersion", "tools"],
@@ -13,7 +13,18 @@
       "minItems": 9,
       "maxItems": 9,
       "items": { "$ref": "#/$defs/toolEntry" },
-      "$comment": "Exactly the reviewed v1 surface; adding a tool requires a new contract version."
+      "allOf": [
+        { "contains": { "properties": { "name": { "const": "computer_capabilities" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_start_session" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_observe" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_find" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_act" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_verify" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_request_handoff" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_resume_after_handoff" } }, "required": ["name"] } },
+        { "contains": { "properties": { "name": { "const": "computer_stop_session" } }, "required": ["name"] } }
+      ],
+      "$comment": "Nine entries plus nine distinct required names forces exactly the reviewed v1 surface; adding or duplicating a tool requires a new contract version."
     }
   },
   "$defs": {
@@ -40,25 +51,13 @@
         "description": { "type": "string", "minLength": 10, "maxLength": 500 },
         "input": {
           "type": "object",
-          "propertyNames": { "$ref": "#/$defs/toolName" },
-          "additionalProperties": { "type": ["string", "number", "boolean"] }
+          "$comment": "Per-tool input fields (session IDs, target handles — never raw desktop coordinates). Full per-tool input/result schemas are a follow-up contract revision; coordinates are structurally rejected by desktop/action-v1 today."
         },
         "result": {
           "type": "object",
-          "additionalProperties": true
+          "$comment": "Per-tool result record; see desktop/* and grounding/* schemas for the shared shapes."
         }
       }
     }
-  },
-  "allOf": [
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_capabilities" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_start_session" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_observe" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_find" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_act" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_verify" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_request_handoff" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_resume_after_handoff" } } } } } } },
-    { "contains": { "properties": { "tools": { "contains": { "properties": { "name": { "const": "computer_stop_session" } } } } } } }
-  ]
+  }
 }

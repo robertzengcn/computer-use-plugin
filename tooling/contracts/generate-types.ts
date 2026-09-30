@@ -4,7 +4,7 @@
  * by contracts:check so the archive can never silently diverge (CU-PLUGIN-16).
  */
 import { compile, type JSONSchema } from 'json-schema-to-typescript';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { loadContractRegistry } from './registry.js';
 
@@ -86,7 +86,9 @@ export async function writeDeclarations(contractsDir: string): Promise<string[]>
   return written;
 }
 
-/** Names whose committed declaration differs from regeneration. */
+/** Names whose committed declaration differs from regeneration, plus orphan
+ * files generation did not produce — a stale copy next to a regenerated one
+ * would otherwise ship silently in the archive (E-7). */
 export async function checkDeclarationDrift(contractsDir: string): Promise<string[]> {
   const generated = await generateDeclarations(contractsDir);
   const drifted: string[] = [];
@@ -102,7 +104,33 @@ export async function checkDeclarationDrift(contractsDir: string): Promise<strin
       drifted.push(name);
     }
   }
+  for (const orphan of await listOrphanDeclarations(contractsDir, generated)) {
+    drifted.push(orphan);
+  }
   return drifted;
+}
+
+async function listOrphanDeclarations(
+  contractsDir: string,
+  generated: Map<string, string>,
+): Promise<string[]> {
+  const typesDir = join(contractsDir, 'types');
+  const onDisk: string[] = [];
+  const walk = async (relativeDir: string): Promise<void> => {
+    const entries = await readdir(join(typesDir, relativeDir), { withFileTypes: true }).catch(
+      () => [],
+    );
+    for (const entry of entries) {
+      const relative = relativeDir.length === 0 ? entry.name : `${relativeDir}/${entry.name}`;
+      if (entry.isDirectory()) {
+        await walk(relative);
+      } else if (entry.isFile() && entry.name.endsWith('.d.ts')) {
+        onDisk.push(relative.replace(/\.d\.ts$/, ''));
+      }
+    }
+  };
+  await walk('');
+  return onDisk.filter((name) => !generated.has(name)).sort();
 }
 
 function toPascalCase(value: string): string {

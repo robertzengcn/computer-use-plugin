@@ -33,7 +33,7 @@
       "sha256": "7495382d2927bee37553c1604898509b1fd2c7bd55837f6fccfa97e7cbf791b1",
       "platform": "win32-x64",
       "launchProfile": "../../adapters/windows/launch-profile.json",
-      "noticesPath": "../../THIRD_PARTY_NOTICES",
+      "noticesPath": "THIRD_PARTY_NOTICES",
       "evidenceRequired": true
     },
     {

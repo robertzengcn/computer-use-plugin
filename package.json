@@ -9,7 +9,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "check": "eslint . && tsc --noEmit && vitest run",
+    "check": "npm run build --silent && eslint . && tsc --noEmit && vitest run && node dist/tooling/cli.js contracts:check",
     "coverage": "vitest run --coverage",
     "build": "tsc",
     "contracts:check": "node dist/tooling/cli.js contracts:check",

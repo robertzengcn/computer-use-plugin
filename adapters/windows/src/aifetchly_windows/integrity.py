@@ -52,8 +52,8 @@ def parse_integrity_level(sid_bytes: bytes) -> str:
     rid = int.from_bytes(sid_bytes[8:12], "little")
     if rid in _LEVEL_BY_RID:
         return _LEVEL_BY_RID[rid]
-    if rid > INTEGRITY_RID_SYSTEM:  # protected-process and above collapse to system
-        return "system"
+    # Unknown RIDs (protected-process 0x5000, medium-plus 0x2100, …) fail
+    # explicitly: an unreported level must never be guessed (CU-PLUGIN-06).
     raise IntegrityError(f"unsupported integrity RID 0x{rid:x}")
 
 

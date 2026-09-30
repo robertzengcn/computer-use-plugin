@@ -13,14 +13,17 @@ from aifetchly_grounding.export.shard import (
 MIB = 1024 * 1024
 
 
-def test_small_file_gets_single_shard() -> None:
+def test_small_file_stays_whole() -> None:
+    # E-9 regression: files under the shard ceiling are package files
+    # themselves; they are not renamed into external-data pieces.
     planned = plan_shards([("pointer_head.onnx", 512)])
-    assert planned[0].shards == (("pointer_head.data.000", 512),)
+    assert planned[0].shards == (("pointer_head.onnx", 512),)
+    assert planned[0].split is False
 
 
-def test_exact_shard_boundary_is_not_split_further() -> None:
+def test_exact_shard_boundary_stays_whole() -> None:
     planned = plan_shards([("decoder_prefill.onnx", MAX_SHARD_BYTES)])
-    assert planned[0].shards == (("decoder_prefill.data.000", MAX_SHARD_BYTES),)
+    assert planned[0].shards == (("decoder_prefill.onnx", MAX_SHARD_BYTES),)
 
 
 def test_oversize_file_splits_into_512mib_shards() -> None:
@@ -36,10 +39,24 @@ def test_per_file_ceiling_rejected() -> None:
         plan_shards([("huge.onnx", 1024 * MIB + 1)])
 
 
-def test_file_count_ceiling_rejected() -> None:
-    specs = [(f"f{i:03d}.onnx", MIB) for i in range(129)]
-    with pytest.raises(ShardingError, match="file package limit"):
+def test_file_count_ceiling_counts_every_package_file() -> None:
+    # E-9 regression: whole files, not just .data pieces, count against the
+    # 128-file package limit (§6.4). 127 whole files + one file split into
+    # 2 pieces = 129 package files > 128.
+    specs = [(f"f{i:03d}.bin", MIB) for i in range(127)]
+    specs.append(("big.onnx", MAX_SHARD_BYTES + 1))
+    with pytest.raises(ShardingError, match="package files exceed"):
         plan_shards(specs)
+
+
+def test_boundary_128_package_files_passes() -> None:
+    specs = [(f"f{i:03d}.bin", MIB) for i in range(127)]
+    specs.append(("edge.onnx", MAX_SHARD_BYTES + 1))  # 127 + 1 piece = 128
+    # edge.onnx just over the ceiling would split into 2 pieces -> 129; use
+    # exactly MAX_SHARD_BYTES so it stays whole: 128 package files.
+    specs[-1] = ("edge.onnx", MAX_SHARD_BYTES)
+    planned = plan_shards(specs)
+    assert len(planned) == 128
 
 
 def test_total_bytes_ceiling_rejected() -> None:

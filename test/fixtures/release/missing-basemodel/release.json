@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "0.1.0-rc.mb",
+  "sourceCommit": "abc1234",
+  "contractArchive": {
+    "version": "v1",
+    "sha256": "9c5729595fb287cc2a2256280448bbe706c0a866f0372515c7483de2af4e6532"
+  },
+  "requiredEvidence": [],
+  "artifacts": [
+    {
+      "role": "model",
+      "location": "model-manifest.json",
+      "bytes": 1621,
+      "sha256": "324d8f2d715deb8d99e97ed92beac2c7e00a934e224958c13756deda3fe838ae",
+      "modelManifestPath": "model-manifest.json",
+      "evidenceRequired": false
+    }
+  ]
+}

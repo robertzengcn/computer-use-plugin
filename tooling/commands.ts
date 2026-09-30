@@ -37,7 +37,7 @@ function wrongPlatformResult(target: Target): CommandResult {
 function spikePendingResult(detail: string): CommandResult {
   return {
     outcome: 'missingPrerequisites',
-    message: `${detail} The Phase 0 spike (PRD §7.1 P0-B) must pin the exact revision before this command can run; no floating dependency is ever resolved implicitly.`,
+    message: `${detail} The Phase 0 spike (PRD §7.1 P0-C/P0-D/P0-E work packages) must pin the exact revision before this command can run; no floating dependency is ever resolved implicitly.`,
   };
 }
 

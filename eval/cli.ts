@@ -68,10 +68,10 @@ export const evalCommands: readonly CommandSpec[] = [
       const runnerName = stringFlag(args, 'runner');
       const datasetId = stringFlag(args, 'dataset');
       const expectedConfig = stringFlag(args, 'config');
-      if (bundle === undefined || runnerName === undefined || datasetId === undefined) {
+      if (bundle === undefined || runnerName === undefined) {
         return {
           outcome: 'invalidArgs',
-          message: 'replay requires --bundle <path>, --runner <profile> and --dataset <id>',
+          message: 'replay requires --bundle <path> and --runner <profile> (design §2.2 form)',
         };
       }
       const profiles = await loadProfilesFromFile(join(process.cwd(), EVAL_DIR, 'runner', 'profiles.json'));
@@ -79,8 +79,22 @@ export const evalCommands: readonly CommandSpec[] = [
       if (profile === undefined) {
         return { outcome: 'invalidArgs', message: `unknown runner profile '${runnerName}'` };
       }
-      const dataset = await loadDataset(join(process.cwd(), EVAL_DIR), datasetId);
-      const { manifest, records } = await loadTraceBundle(bundle);
+      // Expectations come from --dataset when given, otherwise from the
+      // bundle's own annotations.json (design §3.6).
+      const dataset = datasetId !== undefined
+        ? await loadDataset(join(process.cwd(), EVAL_DIR), datasetId)
+        : undefined;
+      const { manifest, records, annotations } = await loadTraceBundle(bundle);
+      const expectedSource = dataset !== undefined
+        ? { label: datasetId as string, version: dataset.version, cases: dataset.cases }
+        : annotationsSource(manifest.traceId, annotations);
+      if (expectedSource === undefined) {
+        return {
+          outcome: 'invalidArgs',
+          message:
+            'bundle has no annotations.json; pass --dataset <id> so replay has expectations to score against',
+        };
+      }
       if (
         expectedConfig !== undefined &&
         manifest.configuration.modelConfigurationId !== expectedConfig
@@ -107,8 +121,7 @@ export const evalCommands: readonly CommandSpec[] = [
             calibrationRevision: manifest.configuration.calibrationRevision,
           },
         })));
-        const expectedByCase = new Map(dataset.cases.map((entry) => [entry.id, entry.expected] as const));
-        const inputs: EvalCaseInput[] = dataset.cases.map((entry) => ({
+        const inputs: EvalCaseInput[] = expectedSource.cases.map((entry) => ({
           caseId: entry.id,
           split: entry.split,
           consentClass: entry.consentClass,
@@ -118,9 +131,8 @@ export const evalCommands: readonly CommandSpec[] = [
             region: 'region' in entry.expected ? entry.expected.region : undefined,
           },
         }));
-        const outcomes = dataset.cases.map((entry) => {
+        const outcomes = expectedSource.cases.map((entry) => {
           const result = run(entry.id);
-          void expectedByCase;
           return {
             caseId: result.caseId,
             candidates: result.candidates.map((candidate) => candidate.point),
@@ -130,7 +142,7 @@ export const evalCommands: readonly CommandSpec[] = [
         const report = evaluateCases(
           inputs,
           outcomes,
-          { mode: 'replay', datasetId, datasetVersion: `${dataset.version}+trace:${manifest.traceId}`, runnerKind: profile.kind },
+          { mode: 'replay', datasetId: expectedSource.label, datasetVersion: `${expectedSource.version}+trace:${manifest.traceId}`, runnerKind: profile.kind },
           profile.configuration,
         );
         await writeArtifacts(args, report, `replay-${manifest.traceId}`);
@@ -172,12 +184,7 @@ export const evalCommands: readonly CommandSpec[] = [
       const reports = (selected as RunnerProfile[]).map((profile) => {
         const runner = syntheticRunner(profile);
         const outcomes = inputs.map((input) => {
-          const expected = input.expected.kind === 'region' && input.expected.region
-            ? { kind: 'region' as const, region: input.expected.region }
-            : input.expected.kind === 'absent'
-              ? { kind: 'absent' as const }
-              : { kind: 'ambiguous' as const };
-          const result = runner({ caseId: input.caseId, expected });
+          const result = runner(input.caseId);
           return {
             caseId: result.caseId,
             candidates: result.candidates.map((candidate) => candidate.point),
@@ -225,6 +232,35 @@ export const evalCommands: readonly CommandSpec[] = [
 function stringFlag(args: { flags: ReadonlyMap<string, string | true> }, name: string): string | undefined {
   const value = args.flags.get(name);
   return typeof value === 'string' ? value : undefined;
+}
+
+interface ExpectedSource {
+  readonly label: string;
+  readonly version: string;
+  readonly cases: DatasetManifest['cases'];
+}
+
+function annotationsSource(
+  traceId: string,
+  annotations: ReadonlyMap<string, { kind: 'region' | 'absent' | 'ambiguous'; region?: { x: number; y: number; w: number; h: number } }>,
+): ExpectedSource | undefined {
+  if (annotations.size === 0) {
+    return undefined;
+  }
+  return {
+    label: `${traceId} (annotations)`,
+    version: `annotations:${traceId}`,
+    cases: [...annotations.entries()].map(([id, annotation]) => ({
+      id,
+      consentClass: 'synthetic' as const,
+      split: 'regression' as const,
+      taskDescription: '',
+      expected:
+        annotation.kind === 'region' && annotation.region !== undefined
+          ? { kind: 'region' as const, region: annotation.region }
+          : { kind: annotation.kind },
+    })) as DatasetManifest['cases'],
+  };
 }
 
 async function writeArtifacts(

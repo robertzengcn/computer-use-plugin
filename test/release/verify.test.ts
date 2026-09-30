@@ -10,6 +10,10 @@ const REPO = process.cwd();
 const SCHEMA = join(REPO, 'tooling', 'release', 'schemas', 'release-manifest-v1.schema.json');
 const FIXTURES = join(REPO, 'test', 'fixtures', 'release');
 
+function b(content: string): Buffer {
+  return Buffer.from(content, 'utf8');
+}
+
 describe('hash helpers', () => {
   it('sha256File matches known vectors', async () => {
     const temp = await mkdtemp(join(tmpdir(), 'cu-hash-'));
@@ -82,6 +86,39 @@ describe('verifyRelease gates (CU-PLUGIN-21, CU-INST-11)', () => {
   it('non-commercial licence chain blocks the release (CU-INST-11)', async () => {
     const report = await verifyRelease(join(FIXTURES, 'noncommercial', 'release.json'), SCHEMA);
     expect(report.failures.some((f) => f.gate === 'licence' && /non-commercial/.test(f.detail))).toBe(true);
+  });
+
+  it('sibling-prefix path escape is rejected (E-3 regression)', async () => {
+    const report = await verifyRelease(join(FIXTURES, 'path-escape', 'release.json'), SCHEMA);
+    expect(report.failures.some((f) => f.gate === 'closure' && /escapes the release directory/.test(f.detail))).toBe(true);
+  });
+
+  it('absolute artifact locations are rejected (E-3 regression)', async () => {
+    const temp = await mkdtemp(join(tmpdir(), 'cu-rel-2-'));
+    const goodBytes = b('ok');
+    await writeFile(join(temp, 'a.bin'), goodBytes);
+    const manifest = {
+      schemaVersion: 1,
+      releaseVersion: '0.1.0-rc.abs',
+      sourceCommit: 'abc1234',
+      contractArchive: { version: 'v1', sha256: 'f'.repeat(64) },
+      requiredEvidence: [],
+      artifacts: [
+        { role: 'contracts', location: '/etc/hostname', bytes: 1, sha256: 'a'.repeat(64) },
+      ],
+    };
+    const path = join(temp, 'release.json');
+    await writeFile(path, JSON.stringify(manifest));
+    const report = await verifyRelease(path, SCHEMA);
+    expect(report.failures.some((f) => f.gate === 'closure' && /escapes/.test(f.detail))).toBe(true);
+    await rm(temp, { recursive: true, force: true });
+  });
+
+  it('missing base-model licence fails the licence gate (E-4 regression)', async () => {
+    const report = await verifyRelease(join(FIXTURES, 'missing-basemodel', 'release.json'), SCHEMA);
+    expect(
+      report.failures.some((f) => f.gate === 'licence' && /baseModel\.licence/.test(f.detail)),
+    ).toBe(true);
   });
 
   it('malformed manifest fails at the schema gate with zero artifacts', async () => {
