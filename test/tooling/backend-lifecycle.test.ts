@@ -81,6 +81,7 @@ class FakeMcpBackend {
     actionId: string;
     keysToHold?: readonly string[];
     disconnectDuringInput?: boolean;
+    holdUntilCancelled?: boolean;
   }): ActionResult {
     if (this.state !== 'READY') {
       throw new Error(`dispatch() called in state ${this.state}`);
@@ -94,6 +95,10 @@ class FakeMcpBackend {
       // ruled out, so the outcome is uncertain — and it is never retried.
       this.state = 'UNAVAILABLE';
       return { state: 'uncertain', errorCode: 'execution_uncertain' };
+    }
+    if (input.holdUntilCancelled) {
+      // Long action (drag/typing) still in flight; stays BUSY until cancelled.
+      return { state: 'dispatched', dispatchTimestamp: this.clock };
     }
     this.heldKeys = [];
     this.state = 'READY';
@@ -188,10 +193,12 @@ describe('backend lifecycle (design §3.8)', () => {
     const backend = new FakeMcpBackend(PINNED);
     backend.start();
     backend.ready({ permissionsGranted: true });
-    backend.dispatch({ actionId: 'drag-1', keysToHold: ['Shift', 'Ctrl'] });
+    backend.dispatch({ actionId: 'drag-1', keysToHold: ['Shift', 'Ctrl'], holdUntilCancelled: true });
+    expect(backend.state).toBe('BUSY');
     const cancellation = backend.cancelRunningAction();
     expect(cancellation.heldKeysReleased).toEqual(['Shift', 'Ctrl']);
     expect(cancellation.queuedReplayed).toBe(false);
+    expect(backend.state).toBe('READY');
   });
 
   it('dispatch timestamps are monotonic across the session', () => {
