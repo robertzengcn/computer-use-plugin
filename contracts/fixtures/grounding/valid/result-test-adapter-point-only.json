@@ -1,0 +1,51 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-t0001",
+  "sessionGeneration": 0,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "synthetic-pointer-1b@0",
+  "candidates": [
+    {
+      "geometry": {
+        "point": {
+          "x": 488.0,
+          "y": 244.0
+        }
+      },
+      "coordinateSpace": "model_input_pixels",
+      "imageDimensions": {
+        "widthPx": 1008,
+        "heightPx": 672
+      },
+      "scores": [
+        {
+          "name": "raw",
+          "value": 0.42,
+          "semantics": "diagnostic_raw",
+          "version": "t1"
+        }
+      ]
+    }
+  ],
+  "preprocessing": {
+    "resize": {
+      "method": "bilinear",
+      "outWidthPx": 1008,
+      "outHeightPx": 672
+    },
+    "modelInputDimensions": {
+      "widthPx": 1008,
+      "heightPx": 672
+    },
+    "transformToCapture": {
+      "scaleX": 1.9047619047619049,
+      "scaleY": 1.6071428571428572,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  },
+  "diagnostics": {
+    "executionProvider": "cpu",
+    "inferenceMs": 3.0
+  }
+}

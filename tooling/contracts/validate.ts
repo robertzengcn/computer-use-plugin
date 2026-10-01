@@ -7,6 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadContractRegistry } from './registry.js';
+import { checkGroundingRequest, checkGroundingResult, type SemanticViolation } from './rules.js';
 
 export interface FixtureManifestEntry {
   readonly schema: string;
@@ -70,18 +71,33 @@ export function runConformance(contractsDir: string): ConformanceReport {
     const validator = registry.compile(entry.schema);
     const passes = validator(instance);
 
+    // Cross-field semantic rules for the grounding families (design §3.4.2):
+    // schema-valid fixtures must also satisfy bounds the schema cannot express.
+    const semantic: readonly SemanticViolation[] = entry.schema.endsWith('grounding/result-v1.json')
+      ? checkGroundingResult(instance)
+      : entry.schema.endsWith('grounding/request-v1.json')
+        ? checkGroundingRequest(instance)
+        : [];
+
     if (entry.expectation === 'valid') {
-      if (passes) {
+      if (passes && semantic.length === 0) {
         validCount += 1;
       } else {
         failures.push({
           kind: 'expected-valid-but-invalid',
           $id: entry.schema,
           file: entry.file,
-          instancePath: validator.errors?.[0]?.instancePath ?? '',
-          keywords: (validator.errors ?? []).map((e) => String(e.keyword)),
+          instancePath: validator.errors?.[0]?.instancePath ?? semantic[0]?.detail ?? '',
+          keywords:
+            semantic.length > 0
+              ? semantic.map((v) => v.rule)
+              : (validator.errors ?? []).map((e) => String(e.keyword)),
         });
       }
+    } else if (passes && semantic.length > 0) {
+      // Semantically invalid fixtures that are schema-valid still count as
+      // correctly rejected when a rule fires.
+      invalidCount += 1;
     } else if (passes) {
       failures.push({
         kind: 'expected-invalid-but-valid',

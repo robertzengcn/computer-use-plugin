@@ -1,0 +1,42 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-s1",
+  "sessionGeneration": 0,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "m",
+  "candidates": [
+    {
+      "geometry": {
+        "point": {
+          "x": 1204.5,
+          "y": 88.0
+        }
+      },
+      "coordinateSpace": "capture_pixels",
+      "imageDimensions": {
+        "widthPx": 960,
+        "heightPx": 1080
+      },
+      "scores": [
+        {
+          "name": "attention",
+          "value": 0.9,
+          "semantics": "attention_activation",
+          "version": "v"
+        }
+      ]
+    }
+  ],
+  "preprocessing": {
+    "modelInputDimensions": {
+      "widthPx": 960,
+      "heightPx": 1080
+    },
+    "transformToCapture": {
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  }
+}

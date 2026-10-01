@@ -1,0 +1,32 @@
+{
+  "contractVersion": 1,
+  "adapterId": "test-pointer-only",
+  "adapterVersion": "0.1.0",
+  "acceptedArchitectures": [
+    "synthetic-pointer-1b"
+  ],
+  "acceptedManifestVersions": [
+    1
+  ],
+  "onnxRuntime": {
+    "version": "1.20.0",
+    "providers": [
+      "cpu"
+    ]
+  },
+  "image": {
+    "formats": [
+      "png"
+    ],
+    "maxPixels": 1048576,
+    "maxBytes": 2097152,
+    "cropSupported": false
+  },
+  "output": {
+    "point": true,
+    "region": false,
+    "heatmap": false,
+    "absencePolicy": "none"
+  },
+  "cooperativeCancel": false
+}

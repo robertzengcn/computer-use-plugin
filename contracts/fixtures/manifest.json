@@ -111,6 +111,12 @@
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
+      "file": "grounding/invalid/request-crop-out-of-bounds.json",
+      "expectation": "invalid",
+      "description": "crop extends beyond the declared capture (semantic rule)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
       "file": "grounding/invalid/request-negative-crop.json",
       "expectation": "invalid",
       "description": "request-negative-crop (invalid)"
@@ -132,6 +138,24 @@
       "file": "grounding/invalid/result-nonfinite-region.json",
       "expectation": "invalid",
       "description": "result-nonfinite-region (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/invalid/result-point-out-of-bounds.json",
+      "expectation": "invalid",
+      "description": "candidate point exceeds declared image bounds (semantic rule)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/invalid/result-region-out-of-bounds.json",
+      "expectation": "invalid",
+      "description": "candidate region exceeds declared image bounds (semantic rule)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/capabilities-v1.json",
+      "file": "grounding/valid/capabilities-test-adapter.json",
+      "expectation": "valid",
+      "description": "second test-only adapter exercises schema interchangeability"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/grounding/capabilities-v1.json",
@@ -162,6 +186,12 @@
       "file": "grounding/valid/result-region-scores.json",
       "expectation": "valid",
       "description": "result-region-scores (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "file": "grounding/valid/result-test-adapter-point-only.json",
+      "expectation": "valid",
+      "description": "point-only result from the second adapter, no heatmap"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",

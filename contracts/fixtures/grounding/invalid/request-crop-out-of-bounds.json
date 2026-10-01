@@ -1,0 +1,21 @@
+{
+  "contractVersion": 1,
+  "requestId": "req-s3",
+  "sessionGeneration": 0,
+  "observationId": "obs-0001",
+  "modelConfigurationId": "m",
+  "image": {
+    "format": "png",
+    "widthPx": 1920,
+    "heightPx": 1080,
+    "crop": {
+      "x": 1800,
+      "y": 0,
+      "w": 400,
+      "h": 200
+    }
+  },
+  "task": {
+    "description": "anything"
+  }
+}
