@@ -1,0 +1,452 @@
+{
+  "version": 1,
+  "datasetId": "w1-workbooks",
+  "generator": "test/fixtures/w1/generate.py (seed 20260928)",
+  "cases": [
+    {
+      "id": "w1-empty-template",
+      "workbook": "workbooks/empty-template.xlsx",
+      "sha256": "5e0ff051fd84b17b44b0d2b8d8bf4b4d8108c0a189a24d97453ae484dae917c8",
+      "bytes": 1626,
+      "family": "layout",
+      "split": "regression",
+      "locale": "en-US",
+      "rowCount": 0,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-empty-template-zh",
+      "workbook": "workbooks/empty-template-zh.xlsx",
+      "sha256": "1089903475d56fa5a5dead496a2a89d2fd47c1c003f2cb64c9ec345842c18aa8",
+      "bytes": 1668,
+      "family": "layout",
+      "split": "regression",
+      "locale": "zh-CN",
+      "rowCount": 0,
+      "headerRow": [
+        "姓名",
+        "电子邮件",
+        "电话",
+        "邮政编码",
+        "会员编号",
+        "备注"
+      ],
+      "sampleExpected": [],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-populated-20",
+      "workbook": "workbooks/populated-20.xlsx",
+      "sha256": "198e34c6af23c54eb39742e6bf88817395cdf4f1684d45b5b8d28762ed96b476",
+      "bytes": 2670,
+      "family": "layout",
+      "split": "regression",
+      "locale": "en-US",
+      "rowCount": 20,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [
+        [
+          "Lead 0002",
+          "lead0002@example.com",
+          "907-874-1523",
+          "38052",
+          "MN-857117900099",
+          ""
+        ],
+        [
+          "Lead 0003",
+          "lead0003@example.com",
+          "905-555-6764",
+          "91608",
+          "MN-207147682149",
+          ""
+        ],
+        [
+          "Lead 0004",
+          "lead0004@example.com",
+          "623-937-1522",
+          "70646",
+          "MN-468113399203",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-populated-200",
+      "workbook": "workbooks/populated-200.xlsx",
+      "sha256": "c6b63fe2f75c2906620f6b12edc2ab287a2e92510d40237984c7deb964023bc3",
+      "bytes": 11161,
+      "family": "layout",
+      "split": "calibration",
+      "locale": "en-US",
+      "rowCount": 200,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [
+        [
+          "Lead 0002",
+          "lead0002@example.com",
+          "261-665-2588",
+          "30904",
+          "MN-211332196232",
+          ""
+        ],
+        [
+          "Lead 0003",
+          "lead0003@example.com",
+          "193-804-4034",
+          "58684",
+          "MN-467554742162",
+          ""
+        ],
+        [
+          "Lead 0004",
+          "lead0004@example.com",
+          "370-361-4478",
+          "39662",
+          "MN-801586919200",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-populated-500",
+      "workbook": "workbooks/populated-500.xlsx",
+      "sha256": "8abd50bce54b31f976ae8f644006efd016c4491cfe2bc60391a4f3e402eba116",
+      "bytes": 25137,
+      "family": "layout",
+      "split": "held_out",
+      "locale": "en-US",
+      "rowCount": 500,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [
+        [
+          "Lead 0002",
+          "lead0002@example.com",
+          "124-666-1833",
+          "47559",
+          "MN-589362317772",
+          ""
+        ],
+        [
+          "Lead 0003",
+          "lead0003@example.com",
+          "194-442-2483",
+          "28408",
+          "MN-471879650905",
+          ""
+        ],
+        [
+          "Lead 0004",
+          "lead0004@example.com",
+          "414-943-8637",
+          "79425",
+          "MN-405631539444",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-populated-200-zh",
+      "workbook": "workbooks/populated-200-zh.xlsx",
+      "sha256": "8f3c37149b9ff68b2039119c3c7703c386e891a84102c4c7fa530c53cc293895",
+      "bytes": 10809,
+      "family": "layout",
+      "split": "regression",
+      "locale": "zh-CN",
+      "rowCount": 200,
+      "headerRow": [
+        "姓名",
+        "电子邮件",
+        "电话",
+        "邮政编码",
+        "会员编号",
+        "备注"
+      ],
+      "sampleExpected": [
+        [
+          "张伟",
+          "lead0002@example.com",
+          "717-851-3548",
+          "74353",
+          "MN-793638717616",
+          ""
+        ],
+        [
+          "王芳",
+          "lead0003@example.com",
+          "858-827-1782",
+          "78381",
+          "MN-984658759682",
+          ""
+        ],
+        [
+          "李娜",
+          "lead0004@example.com",
+          "556-687-5273",
+          "88181",
+          "MN-487341294851",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-reordered-headers",
+      "workbook": "workbooks/reordered-headers.xlsx",
+      "sha256": "589aed13db4819f19d8b9b04c449d8899c8fdac027b58d01736f662df56abb74",
+      "bytes": 2692,
+      "family": "layout",
+      "split": "regression",
+      "locale": "en-US",
+      "rowCount": 20,
+      "headerRow": [
+        "Phone",
+        "Full Name",
+        "Email",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [
+        [
+          "907-874-1523",
+          "Lead 0002",
+          "lead0002@example.com",
+          "38052",
+          "MN-857117900099",
+          ""
+        ],
+        [
+          "905-555-6764",
+          "Lead 0003",
+          "lead0003@example.com",
+          "91608",
+          "MN-207147682149",
+          ""
+        ],
+        [
+          "623-937-1522",
+          "Lead 0004",
+          "lead0004@example.com",
+          "70646",
+          "MN-468113399203",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-duplicate-header",
+      "workbook": "workbooks/duplicate-header.xlsx",
+      "sha256": "30dafc80c1e289d6f955f9a074f0607b30fcb26447d9f0c3bc0cfb5f429b990b",
+      "bytes": 2676,
+      "family": "layout",
+      "split": "regression",
+      "locale": "en-US",
+      "rowCount": 20,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [
+        [
+          "Lead 0002",
+          "lead0002@example.com",
+          "907-874-1523",
+          "38052",
+          "MN-857117900099",
+          ""
+        ],
+        [
+          "Lead 0003",
+          "lead0003@example.com",
+          "905-555-6764",
+          "91608",
+          "MN-207147682149",
+          ""
+        ],
+        [
+          "Lead 0004",
+          "lead0004@example.com",
+          "623-937-1522",
+          "70646",
+          "MN-468113399203",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-unmatched-field",
+      "workbook": "workbooks/unmatched-field.xlsx",
+      "sha256": "4f512d37bd1b70df46f9432090485fe864a7ccec76ae95de969d73f075227e9a",
+      "bytes": 2648,
+      "family": "layout",
+      "split": "regression",
+      "locale": "en-US",
+      "rowCount": 20,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Region"
+      ],
+      "sampleExpected": [
+        [
+          "Lead 0002",
+          "lead0002@example.com",
+          "907-874-1523",
+          "38052",
+          "MN-857117900099",
+          ""
+        ],
+        [
+          "Lead 0003",
+          "lead0003@example.com",
+          "905-555-6764",
+          "91608",
+          "MN-207147682149",
+          ""
+        ],
+        [
+          "Lead 0004",
+          "lead0004@example.com",
+          "623-937-1522",
+          "70646",
+          "MN-468113399203",
+          ""
+        ]
+      ],
+      "consentClass": "synthetic"
+    },
+    {
+      "id": "w1-data-preservation",
+      "workbook": "workbooks/data-preservation.xlsx",
+      "sha256": "c538d5b521cb1c091e925f66a3f8df3ff4d3050b71ce51938dca19c87ddc418b",
+      "bytes": 1892,
+      "family": "data-preservation",
+      "split": "regression",
+      "locale": "en-US",
+      "rowCount": 4,
+      "headerRow": [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Postal Code",
+        "Member ID",
+        "Notes"
+      ],
+      "sampleExpected": [
+        [
+          "张伟",
+          "zhang.wei@example.com",
+          "010-5555",
+          "02138",
+          "MN-000123456789",
+          ""
+        ],
+        [
+          "O'Brien",
+          "dup@example.com",
+          "0911-2020",
+          "08540",
+          "MN-000987654321",
+          "=SUM(A1:A2)"
+        ],
+        [
+          "Anne",
+          "dup@example.com",
+          "+1 555 0100",
+          "90210",
+          "123456789012345678",
+          "+1 555 0100"
+        ]
+      ],
+      "consentClass": "synthetic"
+    }
+  ],
+  "matrixAccounting": {
+    "planned": {
+      "layout": [
+        "empty-template",
+        "populated-20",
+        "populated-200",
+        "populated-500",
+        "reordered-headers",
+        "duplicate-header",
+        "unmatched-field"
+      ],
+      "locale": [
+        "en-US",
+        "zh-CN"
+      ],
+      "rowCount": [
+        0,
+        20,
+        200,
+        500
+      ],
+      "data-preservation": [
+        "leading-zero-phone",
+        "leading-zero-postal",
+        "long-id",
+        "cjk-name",
+        "duplicate-email",
+        "formula-like-equals",
+        "formula-like-plus"
+      ]
+    },
+    "missingCells": [
+      "data-preservation/en-US/20rows",
+      "data-preservation/en-US/200rows",
+      "data-preservation/en-US/500rows",
+      "layout/zh-CN/20rows",
+      "data-preservation/zh-CN/20rows",
+      "data-preservation/zh-CN/200rows",
+      "layout/zh-CN/500rows",
+      "data-preservation/zh-CN/500rows"
+    ],
+    "missingCellCount": 8
+  },
+  "notes": "Workbooks are the expected post-format state (Text formatting applied). Vision/geometry/native-state/handoff fixture families from PRD §4.1 need real captures and stay pending the native spikes."
+}
