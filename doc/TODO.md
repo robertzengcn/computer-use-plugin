@@ -5,6 +5,15 @@
 > phase citations were fixed by the `/review` run that followed this audit
 > (see git history).
 >
+> **2026-10-02 follow-up update (second pass):** additionally implemented —
+> the real Win32 ctypes bindings for integrity and window-at-point (lazy DLL
+> loading, typed off-Windows errors, skipif native tests); package:build with
+> checksummed target manifests (CU-PLUGIN-13, shims delegate to it once
+> pinned); the §6.6 staged export/parity pipeline with typed per-stage
+> failures and model:export/model:parity command wiring; the bounded W-1 AX
+> observation extractor (header row, used range, active cell, selection,
+> sheet tabs, Name Box, formula bar) over synthetic trees.
+>
 > **2026-10-02 follow-up update:** the Linux-completable remainder of this
 > list was implemented — synthetic W-1 workbook corpus with an expected-value
 > oracle and split coverage (CU-PLUGIN-11/19); grounding second-adapter
