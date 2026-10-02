@@ -12,10 +12,16 @@ import { formatConformanceReport, runConformance } from './contracts/validate.js
 import { formatVerification, verifyRelease } from './release/verify.js';
 import { backendPrepare, backendTest, modelPrepare } from './commands/backends.js';
 import { packageBuild } from './commands/package.js';
+import { modelExport, modelParity } from './commands/model.js';
 
 function flagString(args: ParsedArgs, name: string, fallback: string): string {
   const value = args.flags.get(name);
   return typeof value === 'string' ? value : fallback;
+}
+
+function optionalFlagString(args: ParsedArgs, name: string): string | undefined {
+  const value = args.flags.get(name);
+  return typeof value === 'string' ? value : undefined;
 }
 
 const SUPPORTED_TARGETS = ['win32-x64', 'darwin-arm64'] as const;
@@ -33,13 +39,6 @@ function wrongPlatformResult(target: Target): CommandResult {
   return {
     outcome: 'missingPrerequisites',
     message: `--target ${target} requires its native development environment (running on ${process.platform}); run on ${targetPlatform(target)} with the pinned toolchain`,
-  };
-}
-
-function spikePendingResult(detail: string): CommandResult {
-  return {
-    outcome: 'missingPrerequisites',
-    message: `${detail} The Phase 0 spike (PRD §7.1 P0-C/P0-D/P0-E work packages) must pin the exact revision before this command can run; no floating dependency is ever resolved implicitly.`,
   };
 }
 
@@ -117,22 +116,22 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     name: 'model:prepare',
     summary: 'Sync model env and fetch the approved model revision to cache',
-    handler: async (_args, ctx) => modelPrepare(ctx.cwd, flagString(_args, 'config', '<id>')),
+    handler: async (_args, ctx) => modelPrepare(ctx.cwd, optionalFlagString(_args, 'config')),
   },
   {
     name: 'model:export',
     summary: 'Export cached pinned weights to sharded ONNX candidate files',
-    handler: async (args) =>
-      spikePendingResult(
-        `model:export --config ${flagString(args, 'config', '<id>')} requires weights fetched by model:prepare and the pinned export toolchain.`,
-      ),
+    handler: async (args, ctx) =>
+      modelExport(ctx.cwd, flagString(args, 'config', 'gui-actor-2b-fp16')),
   },
   {
     name: 'model:parity',
     summary: 'Compare reference/export stages with the frozen tolerance profile',
-    handler: async (args) =>
-      spikePendingResult(
-        `model:parity --config ${flagString(args, 'config', '<id>')} requires exported candidate graphs from model:export.`,
+    handler: async (args, ctx) =>
+      modelParity(
+        ctx.cwd,
+        flagString(args, 'config', 'gui-actor-2b-fp16'),
+        optionalFlagString(args, 'dataset'),
       ),
   },
   {
