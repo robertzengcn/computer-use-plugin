@@ -10,6 +10,7 @@ import { buildContractArchive } from './contracts/archive.js';
 import { checkDeclarationDrift } from './contracts/generate-types.js';
 import { formatConformanceReport, runConformance } from './contracts/validate.js';
 import { formatVerification, verifyRelease } from './release/verify.js';
+import { backendPrepare, backendTest, modelPrepare } from './commands/backends.js';
 
 function flagString(args: ParsedArgs, name: string, fallback: string): string {
   const value = args.flags.get(name);
@@ -85,7 +86,7 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     name: 'backend:prepare',
     summary: 'Verify pins and sync a backend dev environment from its lock',
-    handler: async (args) => {
+    handler: async (args, ctx) => {
       const target = flagString(args, 'target', 'win32-x64');
       if (!isTarget(target)) {
         return { outcome: 'invalidArgs', message: `unsupported --target ${target}` };
@@ -93,15 +94,13 @@ export const COMMANDS: readonly CommandSpec[] = [
       if (process.platform !== targetPlatform(target)) {
         return wrongPlatformResult(target);
       }
-      return spikePendingResult(
-        `backend:prepare --target ${target} needs the pinned upstream revision recorded in adapters/${target === 'win32-x64' ? 'windows' : 'macos'}/upstream.lock.`,
-      );
+      return backendPrepare(ctx.cwd, target);
     },
   },
   {
     name: 'backend:test',
     summary: 'Run backend unit or --allow-input native tests for a target',
-    handler: async (args) => {
+    handler: async (args, ctx) => {
       const target = flagString(args, 'target', 'win32-x64');
       if (!isTarget(target)) {
         return { outcome: 'invalidArgs', message: `unsupported --target ${target}` };
@@ -109,16 +108,15 @@ export const COMMANDS: readonly CommandSpec[] = [
       if (process.platform !== targetPlatform(target)) {
         return wrongPlatformResult(target);
       }
-      return spikePendingResult(`backend:test --target ${target} requires the prepared environment.`);
+      const suite = flagString(args, 'suite', 'unit') === 'native' ? 'native' : 'unit';
+      const allowInput = args.flags.get('allow-input') === true;
+      return backendTest(ctx.cwd, target, suite, allowInput);
     },
   },
   {
     name: 'model:prepare',
     summary: 'Sync model env and fetch the approved model revision to cache',
-    handler: async () =>
-      spikePendingResult(
-        'model:prepare must fetch approved weights explicitly into the configured cache; grounding/models.lock.json is currently unfetched.',
-      ),
+    handler: async (_args, ctx) => modelPrepare(ctx.cwd, flagString(_args, 'config', '<id>')),
   },
   {
     name: 'model:export',

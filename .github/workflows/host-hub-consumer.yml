@@ -1,0 +1,35 @@
+name: host-hub-consumer
+# Design §8.5 host/Hub consumer job: runs the pinned AiFetchly/Hub consumer
+# builds against a candidate artifact closure. Producer tests can never
+# substitute for it (PRD §6.2).
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: 'Release manifest path or digest of the compatibility candidate'
+        required: true
+        type: string
+      consumer_build:
+        description: 'Pinned host/Hub consumer build identity'
+        required: true
+        type: string
+
+jobs:
+  consumer:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Verify the candidate closure, then require consumer evidence
+        run: |
+          node dist/tooling/cli.js release:verify --manifest "${{ inputs.candidate }}"
+          echo "::error::UNQUALIFIED - the pinned AiFetchly/Hub consumer suites (${{ inputs.consumer_build }}) must be wired in when published; producer tests cannot substitute" >&2
+          exit 1

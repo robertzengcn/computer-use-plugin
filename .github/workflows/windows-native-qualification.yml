@@ -1,0 +1,29 @@
+name: windows-native-qualification
+# Design §8.5 qualification job: explicit dispatch only. Preflights runner
+# capabilities and reports UNQUALIFIED when they are missing — an unavailable
+# job is never a silent pass (PRD §6.1).
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: 'Candidate artifact/digest under review'
+        required: true
+        type: string
+
+jobs:
+  native:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preflight interactive-desktop capabilities
+        run: |
+          echo "candidate: ${{ inputs.candidate }}"
+          # Hosted runners do not prove an unlocked interactive desktop with a
+          # licensed Excel install; the real qualification run happens on the
+          # controlled self-hosted machine with --allow-input.
+          node -e "const l=require('./adapters/windows/upstream.lock'); if(l.status!=='pinned'){console.error('UNQUALIFIED - upstream unpinned');process.exit(1)}"
+          echo "::error::UNQUALIFIED - hosted runner lacks an interactive desktop session; run on the controlled qualification machine" >&2
+          exit 1

@@ -1,0 +1,30 @@
+name: model-qualification
+# Design §8.5 full model qualification per claimed provider. A CPU run cannot
+# qualify DirectML/CoreML (design §6.6 step 6); missing hardware evidence is
+# UNQUALIFIED, not a skipped pass.
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: 'Model configuration id (e.g. gui-actor-2b-fp16)'
+        required: true
+        type: string
+      provider_hardware:
+        description: 'Declared provider hardware (e.g. dml on RTX 4070)'
+        required: true
+        type: string
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preflight provider hardware
+        run: |
+          echo "config: ${{ inputs.config }} on ${{ inputs.provider_hardware }}"
+          node -e "const l=require('./grounding/models.lock.json'); if(l.status!=='approved'){console.error('UNQUALIFIED - models.lock.json not approved');process.exit(1)}"
+          echo "::error::UNQUALIFIED - provider-matching hardware must be attached and declared; this stub refuses to qualify on CPU" >&2
+          exit 1

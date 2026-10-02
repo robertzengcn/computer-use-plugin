@@ -3,8 +3,21 @@
 > **2026-09-30 review update:** errors E-1 through E-10 plus the §2.2 `check`
 > conformance gap, the dangling upstream-lock `$schema`, and the wrong PRD
 > phase citations were fixed by the `/review` run that followed this audit
-> (see git history). The remaining sections describe work that is still open
-> and remain accurate.
+> (see git history).
+>
+> **2026-10-02 follow-up update:** the Linux-completable remainder of this
+> list was implemented — synthetic W-1 workbook corpus with an expected-value
+> oracle and split coverage (CU-PLUGIN-11/19); grounding second-adapter
+> fixtures, cross-field semantic bounds rules and a lifecycle harness
+> (CU-PLUGIN-03); a backend lifecycle harness proving the §3.8 state machine
+> and uncertain-never-retried (CU-PLUGIN-17, contract side of CU-PLUGIN-07);
+> Python cross-language conformance over the same fixtures (CU-PLUGIN-18);
+> backend:prepare/backend:test/model:prepare real implementations that fail
+> closed on unpinned locks; four qualification workflow stubs that report
+> UNQUALIFIED instead of skipping (CU-PLUGIN-20); executable work packages
+> (CU-PLUGIN-22, doc/work-packages.md). What remains open needs Windows,
+> approved weights + GPU, or a Mac — see the "Still environment-blocked"
+> section at the end.
 
 Audit date: 2026-09-29.
 
@@ -249,3 +262,21 @@ Larger models, verifier, multi-display control, offline bundles, Windows ARM, In
 2. E-6 and E-8 — small, but they will mis-report integrity and block the Mac pin.
 3. P0-C, P0-D, P0-E spike reports before any P1/P2/P3 artifact is called qualified.
 4. P1 W-1 fixtures and Windows package, in parallel with P2 only after the model spike names a configuration worth exporting.
+
+---
+
+## 5. Still environment-blocked (accurate as of 2026-10-02)
+
+These rows cannot move on a Linux workstation; they need Windows, approved
+weights + provider GPU hardware, or a Mac:
+
+- **P0-C**: pinning Windows-MCP, the ctypes `OpenProcess`/`GetTokenInformation`/
+  `WindowFromPoint` bindings, `tools/call` allowlist enforcement in a running
+  stdio server, the native spike report.
+- **P0-D**: pinning GUI-Actor-2B weights (explicit ~4.45 GB fetch), the three-graph
+  ONNX export, real-tensor stage parity, provider/memory measurements.
+- **P0-E**: the Ghost-vs-in-house spike on a Mac (decision must precede Phase 3).
+- **P1/P2-A/P3**: native qualification, qualified model file set, signed/notarized
+  Mac helper, W-1 end-to-end with the host.
+- Host/Hub consumer evidence for every qualified combination (CU-PLUGIN-14
+  consumer side; producer gates exist and fail closed).

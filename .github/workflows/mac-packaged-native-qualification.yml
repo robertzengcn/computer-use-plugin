@@ -1,0 +1,26 @@
+name: mac-packaged-native-qualification
+# Design §8.5 qualification job: explicit dispatch only. TCC attribution,
+# signing/notarization and no-sidecar checks need the controlled signed-host
+# Mac — never a hosted runner, never a silent pass.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: 'Candidate artifact/digest under review'
+        required: true
+        type: string
+
+jobs:
+  packaged-native:
+    runs-on: macos-14
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preflight signed-host capabilities
+        run: |
+          echo "candidate: ${{ inputs.candidate }}"
+          node -e "const l=require('./adapters/macos/ghost-os/upstream.lock'); if(l.status!=='pinned'){console.error('UNQUALIFIED - helper unpinned');process.exit(1)}"
+          echo "::error::UNQUALIFIED - needs the controlled signed-host Mac with AiFetchly attribution; hosted runners cannot provide it" >&2
+          exit 1
