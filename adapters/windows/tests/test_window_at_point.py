@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 
-from aifetchly_windows.integrity import IntegrityError
 from aifetchly_windows.window_at_point import (
     CtypesWindowApi,
     DesktopPoint,
@@ -85,8 +86,17 @@ def test_invalid_owner_pid_rejected() -> None:
         resolve_window_at_point(DesktopPoint(1, 1), api)
 
 
-def test_ctypes_stub_fails_closed_off_windows() -> None:
-    # On the scaffold the ctypes backend is deliberately not wired: the pinned
-    # upstream revision (P0-C) defines the final binding, so no guessing here.
-    with pytest.raises((WindowAtPointError, IntegrityError)):
-        resolve_window_at_point(DesktopPoint(1, 1), CtypesWindowApi())  # type: ignore[arg-type]
+def test_ctypes_backend_fails_typed_off_windows() -> None:
+    # The real ctypes backend is implemented; off Windows it must refuse with
+    # the typed error rather than an ImportError (native runs happen on the
+    # P0-C qualification machine).
+    with pytest.raises(WindowAtPointError, match="requires Windows"):
+        CtypesWindowApi()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="native Win32 execution (P0-C qualification machine)")
+def test_ctypes_chain_resolves_real_window() -> None:
+    api = CtypesWindowApi()
+    result = resolve_window_at_point(DesktopPoint(1, 1), api)
+    assert result.window_handle > 0
+    assert result.process_id > 0

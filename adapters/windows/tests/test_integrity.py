@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import struct
+import sys
 
 import pytest
 
 from aifetchly_windows.integrity import (
+    CtypesWinApi,
     IntegrityError,
     IntegrityReport,
     parse_integrity_level,
@@ -85,3 +87,20 @@ def test_process_integrity_never_guesses_on_error() -> None:
         process_integrity(1234, api)
     with pytest.raises(IntegrityError, match="invalid process id"):
         process_integrity(-1, api)
+
+
+def test_ctypes_backend_fails_typed_off_windows() -> None:
+    if sys.platform == "win32":
+        pytest.skip("native backend available; typed off-Windows path not reachable")
+    with pytest.raises(IntegrityError, match="requires Windows"):
+        CtypesWinApi()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="native Win32 execution (P0-C qualification machine)")
+def test_ctypes_reads_own_process_integrity() -> None:
+    import os
+
+    api = CtypesWinApi()
+    report = process_integrity(os.getpid(), api)
+    assert report.integrity_level in {"medium", "high"}
+    assert report.is_own_process is False

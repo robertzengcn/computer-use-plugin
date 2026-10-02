@@ -7,6 +7,7 @@ reports facts, it never retargets an action (§4.2).
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -40,16 +41,59 @@ class WindowApi(Protocol):
 
 
 class CtypesWindowApi:
-    """Production adapter; wired with the pinned upstream revision (Phase 0)."""
+    """Production adapter over user32, per the §4 API chain. DLLs load
+    lazily so the module imports anywhere; off-Windows use raises the typed
+    error. Native execution is exercised on the P0-C qualification machine."""
 
-    def window_from_point(self, point: DesktopPoint) -> int:  # pragma: no cover
-        raise WindowAtPointError("ctypes Win32 backend is wired with the pinned upstream revision (Phase 0 P0-C)")
+    GA_ROOT = 2
 
-    def ancestor_root(self, window_handle: int) -> int:  # pragma: no cover
-        raise WindowAtPointError("ctypes Win32 backend is wired with the pinned upstream revision (Phase 0 P0-C)")
+    def __init__(self) -> None:
+        if sys.platform != "win32":  # pragma: no cover - platform guard
+            raise WindowAtPointError("ctypes Win32 backend requires Windows")
+        import ctypes
+        from ctypes import wintypes
 
-    def window_thread_process_id(self, window_handle: int) -> tuple[int, int]:  # pragma: no cover
-        raise WindowAtPointError("ctypes Win32 backend is wired with the pinned upstream revision (Phase 0 P0-C)")
+        self._ctypes = ctypes
+        self._wintypes = wintypes
+        self._user32 = ctypes.WinDLL("user32", use_last_error=True)
+
+        class _Point(ctypes.Structure):
+            _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
+
+        self._Point = _Point
+        self._user32.WindowFromPoint.argtypes = [_Point]
+        self._user32.WindowFromPoint.restype = wintypes.HWND
+        self._user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+        self._user32.GetAncestor.restype = wintypes.HWND
+        self._user32.GetWindowThreadProcessId.argtypes = [
+            wintypes.HWND, ctypes.POINTER(wintypes.DWORD),
+        ]
+        self._user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+
+    def window_from_point(self, point: DesktopPoint) -> int:
+        hwnd = self._user32.WindowFromPoint(self._Point(point.x, point.y))
+        if not hwnd:
+            raise WindowAtPointError(
+                f"WindowFromPoint({point.x}, {point.y}) returned null: WinError {self._ctypes.get_last_error()}"
+            )
+        return int(hwnd)
+
+    def ancestor_root(self, window_handle: int) -> int:
+        root = self._user32.GetAncestor(window_handle, self.GA_ROOT)
+        if not root:
+            raise WindowAtPointError(
+                f"GetAncestor(GA_ROOT) failed for {window_handle}: WinError {self._ctypes.get_last_error()}"
+            )
+        return int(root)
+
+    def window_thread_process_id(self, window_handle: int) -> tuple[int, int]:
+        pid = self._wintypes.DWORD(0)
+        thread_id = self._user32.GetWindowThreadProcessId(window_handle, self._ctypes.byref(pid))
+        if not thread_id:
+            raise WindowAtPointError(
+                f"GetWindowThreadProcessId failed for {window_handle}: WinError {self._ctypes.get_last_error()}"
+            )
+        return int(thread_id), int(pid.value)
 
 
 def resolve_window_at_point(

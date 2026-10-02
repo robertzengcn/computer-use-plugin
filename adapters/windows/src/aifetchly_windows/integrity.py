@@ -1,12 +1,13 @@
 """Process integrity and ownership facts (design §4).
 
 Pure SID parsing is platform-neutral and unit-tested everywhere; the Win32
-calls live behind :mod:`aifetchly_windows._winapi` so tests can mock them and
-non-Windows hosts fail explicitly instead of guessing.
+calls live in :class:`CtypesWinApi` (lazy DLL loading, typed errors) so tests
+can mock them and non-Windows hosts fail explicitly instead of guessing.
 """
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -73,10 +74,93 @@ class WinApi(Protocol):
 
 
 class CtypesWinApi:
-    """Production adapter using OpenProcess/GetTokenInformation via ctypes."""
+    """Production adapter: OpenProcess → OpenProcessToken → GetTokenInformation
+    (TokenIntegrityLevel) via ctypes, per the §4 API list.
 
-    def open_process_token_integrity(self, process_id: int) -> bytes:  # pragma: no cover - exercised on Windows native runs only
-        raise IntegrityError("ctypes Win32 backend is wired with the pinned upstream revision (Phase 0 P0-C)")
+    DLLs load lazily so the module imports on any OS; off-Windows use raises
+    the typed error instead of guessing. Native execution is exercised on the
+    P0-C Windows qualification machine.
+    """
+
+    def __init__(self) -> None:
+        if sys.platform != "win32":  # pragma: no cover - platform guard
+            raise IntegrityError("ctypes Win32 backend requires Windows")
+        import ctypes
+        from ctypes import wintypes
+
+        self._ctypes = ctypes
+        self._kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self._advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+
+        self._kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        self._kernel32.OpenProcess.restype = wintypes.HANDLE
+        self._kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        self._kernel32.CloseHandle.restype = wintypes.BOOL
+        self._advapi32.OpenProcessToken.argtypes = [
+            wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE),
+        ]
+        self._advapi32.OpenProcessToken.restype = wintypes.BOOL
+        self._advapi32.GetTokenInformation.argtypes = [
+            wintypes.HANDLE, wintypes.INT, wintypes.LPVOID, wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        self._advapi32.GetTokenInformation.restype = wintypes.BOOL
+        self._advapi32.GetLengthSid.argtypes = [wintypes.LPVOID]
+        self._advapi32.GetLengthSid.restype = wintypes.DWORD
+
+    def open_process_token_integrity(self, process_id: int) -> bytes:
+        """Return the process's integrity SID bytes (S-1-16-RID)."""
+        ctypes = self._ctypes
+        from ctypes import wintypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        TOKEN_QUERY = 0x0008
+        TokenIntegrityLevel = 25
+
+        process = self._kernel32.OpenProcess(
+            PROCESS_QUERY_LIMITED_INFORMATION, False, process_id
+        )
+        if not process:
+            raise IntegrityError(
+                f"OpenProcess({process_id}) failed: WinError {ctypes.get_last_error()}"
+            )
+        try:
+            token = wintypes.HANDLE()
+            if not self._advapi32.OpenProcessToken(
+                process, TOKEN_QUERY, ctypes.byref(token)
+            ):
+                raise IntegrityError(
+                    f"OpenProcessToken({process_id}) failed: WinError {ctypes.get_last_error()}"
+                )
+            try:
+                length = wintypes.DWORD(0)
+                self._advapi32.GetTokenInformation(
+                    token, TokenIntegrityLevel, None, 0, ctypes.byref(length)
+                )
+                if length.value == 0:
+                    raise IntegrityError("GetTokenInformation returned a zero length")
+                buffer = ctypes.create_string_buffer(length.value)
+                if not self._advapi32.GetTokenInformation(
+                    token, TokenIntegrityLevel, buffer, length.value, ctypes.byref(length)
+                ):
+                    raise IntegrityError(
+                        f"GetTokenInformation failed: WinError {ctypes.get_last_error()}"
+                    )
+                # TOKEN_MANDATORY_LABEL starts with SID_AND_ATTRIBUTES whose
+                # first field is the SID pointer.
+                sid_pointer = ctypes.cast(
+                    buffer, ctypes.POINTER(ctypes.c_void_p)
+                ).contents.value
+                if not sid_pointer:
+                    raise IntegrityError("TOKEN_MANDATORY_LABEL has no SID")
+                sid_length = self._advapi32.GetLengthSid(sid_pointer)
+                if sid_length == 0:
+                    raise IntegrityError("GetLengthSid failed")
+                return ctypes.string_at(sid_pointer, sid_length)
+            finally:
+                self._kernel32.CloseHandle(token)
+        finally:
+            self._kernel32.CloseHandle(process)
 
 
 def process_integrity(
