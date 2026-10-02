@@ -11,6 +11,7 @@ import { checkDeclarationDrift } from './contracts/generate-types.js';
 import { formatConformanceReport, runConformance } from './contracts/validate.js';
 import { formatVerification, verifyRelease } from './release/verify.js';
 import { backendPrepare, backendTest, modelPrepare } from './commands/backends.js';
+import { packageBuild } from './commands/package.js';
 
 function flagString(args: ParsedArgs, name: string, fallback: string): string {
   const value = args.flags.get(name);
@@ -137,10 +138,16 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     name: 'package:build',
     summary: 'Assemble already built/verified target artifacts and notices',
-    handler: async (args) =>
-      spikePendingResult(
-        `package:build --target ${flagString(args, 'target', '<target>')} requires a pinned, qualified backend artifact.`,
-      ),
+    handler: async (args, ctx) => {
+      const target = flagString(args, 'target', 'win32-x64');
+      if (!isTarget(target)) {
+        return { outcome: 'invalidArgs', message: `unsupported --target ${target}` };
+      }
+      if (process.platform !== targetPlatform(target)) {
+        return wrongPlatformResult(target);
+      }
+      return packageBuild(ctx.cwd, target, join(ctx.cwd, 'out'));
+    },
   },
   {
     name: 'release:verify',

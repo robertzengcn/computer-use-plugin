@@ -12,5 +12,7 @@ if [ "$status" != "pinned" ]; then
   exit 3
 fi
 
-echo "packaging/macos: build/sign/notarize pipeline pending the P0-E decision" >&2
-exit 3
+# Assembly is implemented by the TypeScript tooling; signing/notarization
+# remain the P3 release step on the signed-host Mac.
+node "${repo_root}/dist/tooling/cli.js" package:build --target darwin-arm64
+exit $?

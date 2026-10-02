@@ -17,7 +17,6 @@ if ($lock.status -ne "pinned") {
     exit 3
 }
 
-# Environment-assembly and Hub-lock emission are implemented by the TS tooling
-# once the managed-uv vs prebuilt-embeddable decision is made in Phase 0.
-Write-Error "packaging/windows: environment assembly pending the Phase 0 delivery decision"
-exit 3
+# Assembly is implemented by the TypeScript tooling; this shim stays thin.
+node (Join-Path $repoRoot "dist/tooling/cli.js") package:build --target win32-x64
+exit $LASTEXITCODE
