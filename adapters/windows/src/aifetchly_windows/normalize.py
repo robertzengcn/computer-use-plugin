@@ -114,7 +114,7 @@ def normalize_ax_tree(
                 focused=element.focused,
             )
 
-    return_index = visit(raw_root, 0)
+    visit(raw_root, 0)
 
     by_role: dict[str, tuple[int, ...]] = {}
     for index, element in enumerate(elements):
