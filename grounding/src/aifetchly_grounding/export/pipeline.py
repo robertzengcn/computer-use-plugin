@@ -35,6 +35,11 @@ STAGES = (
     "assemble_file_set",
 )
 
+# Stages with real executable code. Everything else reports "unimplemented"
+# and unqualifies the run — prerequisites alone must never imply export
+# success (B02: no stage may claim ok without performing work).
+IMPLEMENTED_STAGES = frozenset({"resolve_lock"})
+
 
 @dataclass(frozen=True)
 class StageFailure(Exception):
@@ -76,24 +81,41 @@ def resolve_models_lock(config: dict[str, object]) -> dict[str, object]:
     raise StageFailure("resolve_lock", f"model {config.get('modelId')} not present in models.lock.json")
 
 
-def run_pipeline(config_id: str, output_dir: Path) -> dict[str, object]:
+def run_pipeline(
+    config_id: str,
+    output_dir: Path,
+    dataset: str | None = None,
+) -> dict[str, object]:
     """Execute the staged sequence and return a machine-readable report."""
-    report: dict[str, object] = {"config": config_id, "stages": {}, "status": "candidate"}
+    report: dict[str, object] = {
+        "config": config_id,
+        "dataset": dataset,
+        "stages": {},
+        "status": "candidate",
+    }
     stages: dict[str, str] = {}
     try:
         config = load_config(config_id)
         model = resolve_models_lock(config)
         stages["resolve_lock"] = "ok"
+        report["model"] = model.get("modelId")
 
         require_reference_toolchain()
-        stages["reference_smoke"] = "ok"
-        stages["export_graphs"] = "ok"
-        stages["shard_external_data"] = "ok"
-        stages["parity"] = "ok"
-        stages["calibration"] = "ok"
-        stages["provider_report"] = "ok"
-        stages["assemble_file_set"] = "ok"
-        report["model"] = model.get("modelId")
+        for stage in STAGES:
+            if stage == "resolve_lock":
+                continue
+            stages[stage] = (
+                "ok" if stage in IMPLEMENTED_STAGES else "unimplemented"
+            )
+        unimplemented = [
+            stage for stage in STAGES if stages.get(stage) == "unimplemented"
+        ]
+        if unimplemented:
+            # Prerequisites satisfied but the export/parity machinery is not
+            # implemented: an explicit unqualified result, never success.
+            report["status"] = "unqualified"
+            report["failingStage"] = unimplemented[0]
+            report["unimplementedStages"] = unimplemented
     except StageFailure as failure:
         stages[failure.stage] = f"failed: {failure.reason}"
         report["status"] = "unqualified"
@@ -116,9 +138,10 @@ def run_pipeline(config_id: str, output_dir: Path) -> dict[str, object]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="aifetchly_grounding.export.pipeline")
     parser.add_argument("--config", required=True, help="configuration id from grounding/configs/")
+    parser.add_argument("--dataset", help="dataset id whose fixtures parity must evaluate")
     parser.add_argument("--out", default=str(GROUNDING_ROOT / "out"), help="output directory")
     args = parser.parse_args(argv)
-    report = run_pipeline(args.config, Path(args.out) / args.config)
+    report = run_pipeline(args.config, Path(args.out) / args.config, dataset=args.dataset)
     print(json.dumps(report))
     if report["status"] == "prerequisites-missing":
         return 3

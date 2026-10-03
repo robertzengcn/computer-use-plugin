@@ -21,6 +21,7 @@ async function runPipeline(
   repoRoot: string,
   config: string,
   module: string,
+  dataset?: string,
 ): Promise<CommandResult> {
   const status = await lockStatus(repoRoot);
   if (status !== 'approved') {
@@ -29,8 +30,9 @@ async function runPipeline(
       message: `grounding/models.lock.json status is '${status}': run the P0-D spike pin first; model:prepare fetches weights only after approval`,
     };
   }
+  const extraArgs = dataset !== undefined ? ['--config', config, '--dataset', dataset] : ['--config', config];
   const result = await runProcess({
-    argv: buildArgv({ kind: 'uv-python', project: 'grounding', module, extraArgs: ['--config', config] }),
+    argv: buildArgv({ kind: 'uv-python', project: 'grounding', module, extraArgs }),
     cwd: repoRoot,
     timeoutMs: 60 * 60_000,
   });
@@ -58,5 +60,7 @@ export function modelParity(repoRoot: string, config: string, dataset: string | 
       message: 'model:parity requires --dataset <id> (the frozen tolerance profile is per dataset)',
     });
   }
-  return runPipeline(repoRoot, `${config}`, 'aifetchly_grounding.export.pipeline');
+  // The dataset routes through to the pipeline so the emitted report carries
+  // the exact dataset identity it evaluated (B15).
+  return runPipeline(repoRoot, config, 'aifetchly_grounding.export.pipeline', dataset);
 }

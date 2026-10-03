@@ -47,3 +47,33 @@ def test_pipeline_names_unknown_config_stage(tmp_path: Path) -> None:
     report = run_pipeline("ghost-config", tmp_path)
     assert report["status"] == "unqualified"
     assert report["failingStage"] == "resolve_lock"
+
+
+def test_satisfied_prerequisites_never_imply_export_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # B02: with an approved lock and toolchain present, unimplemented stages
+    # must report unqualified — never all-ok with status candidate.
+    import aifetchly_grounding.export.pipeline as pipeline_module
+
+    approved_lock = {
+        "status": "approved",
+        "models": [
+            {
+                "modelId": "microsoft/GUI-Actor-2B-Qwen2-VL",
+                "revision": "r1",
+                "commercialUse": "allowed",
+            }
+        ],
+    }
+    lock_path = tmp_path / "models.lock.json"
+    lock_path.write_text(json.dumps(approved_lock))
+    monkeypatch.setattr(pipeline_module, "MODELS_LOCK", lock_path)
+    monkeypatch.setattr(pipeline_module, "require_reference_toolchain", lambda: None)
+
+    report = pipeline_module.run_pipeline("gui-actor-2b-fp16", tmp_path / "out", dataset="w1-smoke")
+    assert report["status"] == "unqualified"
+    assert report["failingStage"] == "reference_smoke"
+    assert "parity" in report["unimplementedStages"]
+    assert all(state != "ok" for stage, state in report["stages"].items() if stage != "resolve_lock")
+    assert report["dataset"] == "w1-smoke"
