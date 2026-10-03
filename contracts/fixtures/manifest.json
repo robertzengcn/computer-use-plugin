@@ -219,9 +219,27 @@
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/invalid/public-tools-act-missing-session.json",
+      "expectation": "invalid",
+      "description": "act input without session/target identity is rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/invalid/public-tools-act-raw-coordinates-grant.json",
+      "expectation": "invalid",
+      "description": "raw coordinates and model-supplied grants are structurally rejected in act input"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
       "file": "tools/invalid/public-tools-duplicate-name.json",
       "expectation": "invalid",
       "description": "nine entries with a duplicated name and a missing tool are rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/invalid/public-tools-find-bad-source.json",
+      "expectation": "invalid",
+      "description": "find result grounding source must be accessibility or vision"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",

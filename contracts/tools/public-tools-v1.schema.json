@@ -2,62 +2,657 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
   "title": "Public tool surface",
-  "description": "The complete model-visible tool surface for computer use (design §3.1). Exactly these nine tools: the array holds nine entries and each required name appears at least once, so the surface is enforced exactly. No raw backend tool is advertised as a planner tool (CU-PLUGIN-02).",
+  "description": "The complete model-visible tool surface (design \u00a73.1, CU-PLUGIN-02). Nine tools exactly; each tool's input and result are strictly shaped. Raw coordinates, model-supplied grants or approvals are structurally rejected in act payloads.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contractVersion", "tools"],
+  "required": [
+    "contractVersion",
+    "tools"
+  ],
   "properties": {
-    "contractVersion": { "const": 1 },
+    "contractVersion": {
+      "const": 1
+    },
     "tools": {
       "type": "array",
       "minItems": 9,
       "maxItems": 9,
-      "items": { "$ref": "#/$defs/toolEntry" },
+      "items": {
+        "$ref": "#/$defs/toolEntry"
+      },
       "allOf": [
-        { "contains": { "properties": { "name": { "const": "computer_capabilities" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_start_session" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_observe" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_find" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_act" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_verify" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_request_handoff" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_resume_after_handoff" } }, "required": ["name"] } },
-        { "contains": { "properties": { "name": { "const": "computer_stop_session" } }, "required": ["name"] } }
-      ],
-      "$comment": "Nine entries plus nine distinct required names forces exactly the reviewed v1 surface; adding or duplicating a tool requires a new contract version."
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_capabilities"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_start_session"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_observe"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_find"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_act"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_verify"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_request_handoff"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_resume_after_handoff"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "computer_stop_session"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        }
+      ]
     }
   },
   "$defs": {
-    "toolName": {
+    "sessionId": {
       "type": "string",
-      "enum": [
-        "computer_capabilities",
-        "computer_start_session",
-        "computer_observe",
-        "computer_find",
-        "computer_act",
-        "computer_verify",
-        "computer_request_handoff",
-        "computer_resume_after_handoff",
-        "computer_stop_session"
-      ]
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "observationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "targetHandle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "$comment": "Opaque host-minted handle; never coordinates."
     },
     "toolEntry": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/capabilitiesTool"
+        },
+        {
+          "$ref": "#/$defs/startSessionTool"
+        },
+        {
+          "$ref": "#/$defs/observeTool"
+        },
+        {
+          "$ref": "#/$defs/findTool"
+        },
+        {
+          "$ref": "#/$defs/actTool"
+        },
+        {
+          "$ref": "#/$defs/verifyTool"
+        },
+        {
+          "$ref": "#/$defs/requestHandoffTool"
+        },
+        {
+          "$ref": "#/$defs/resumeTool"
+        },
+        {
+          "$ref": "#/$defs/stopSessionTool"
+        }
+      ]
+    },
+    "capabilitiesTool": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "description"],
+      "required": [
+        "name",
+        "description"
+      ],
       "properties": {
-        "name": { "$ref": "#/$defs/toolName" },
-        "description": { "type": "string", "minLength": 10, "maxLength": 500 },
+        "name": {
+          "const": "computer_capabilities"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "$ref": "#/$defs/noInput"
+        },
+        "result": {
+          "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json"
+        }
+      }
+    },
+    "startSessionTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_start_session"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
         "input": {
           "type": "object",
-          "$comment": "Per-tool input fields (session IDs, target handles — never raw desktop coordinates). Full per-tool input/result schemas are a follow-up contract revision; coordinates are structurally rejected by desktop/action-v1 today."
+          "additionalProperties": false,
+          "required": [
+            "targetRef",
+            "purpose"
+          ],
+          "properties": {
+            "targetRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "$comment": "User-selected target reference; the host resolves it, never the model."
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
         },
         "result": {
           "type": "object",
-          "$comment": "Per-tool result record; see desktop/* and grounding/* schemas for the shared shapes."
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "scopedCapabilities"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "scopedCapabilities": {
+              "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/capabilities-v1.json"
+            }
+          }
         }
       }
+    },
+    "observeTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_observe"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "local_only",
+                "visual_planner"
+              ]
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "observationId",
+            "metadata"
+          ],
+          "properties": {
+            "observationId": {
+              "$ref": "#/$defs/observationId"
+            },
+            "metadata": {
+              "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json#/$defs/observationMetadata"
+            }
+          }
+        }
+      }
+    },
+    "findTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_find"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "observationId",
+            "targetDescription"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "observationId": {
+              "$ref": "#/$defs/observationId"
+            },
+            "targetDescription": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          }
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "targetHandle",
+                "groundingSource"
+              ],
+              "properties": {
+                "targetHandle": {
+                  "$ref": "#/$defs/targetHandle"
+                },
+                "groundingSource": {
+                  "type": "string",
+                  "enum": [
+                    "accessibility",
+                    "vision"
+                  ]
+                },
+                "evidenceSummary": {
+                  "type": "string",
+                  "maxLength": 300
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "errorCode"
+              ],
+              "properties": {
+                "errorCode": {
+                  "type": "string",
+                  "enum": [
+                    "target_not_found",
+                    "target_ambiguous"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "actTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_act"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "targetHandle",
+            "actionId",
+            "action"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "targetHandle": {
+              "$ref": "#/$defs/targetHandle"
+            },
+            "actionId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "action": {
+              "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json#/$defs/typedAction"
+            }
+          },
+          "$comment": "additionalProperties:false rejects raw x/y coordinates, grants, approvals and every model-supplied authority field."
+        },
+        "result": {
+          "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json#/$defs/actionOutcome"
+        }
+      }
+    },
+    "verifyTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_verify"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "expectedState"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "expectedState": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "observationId": {
+              "$ref": "#/$defs/observationId"
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "verification"
+          ],
+          "properties": {
+            "verification": {
+              "type": "string",
+              "enum": [
+                "satisfied",
+                "unsatisfied",
+                "unknown"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "requestHandoffTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_request_handoff"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "reason"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "inputRevoked"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "inputRevoked": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "resumeTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_resume_after_handoff"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "observationId"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "observationId": {
+              "$ref": "#/$defs/observationId"
+            }
+          }
+        }
+      }
+    },
+    "stopSessionTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "const": "computer_stop_session"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sessionId",
+            "stopped"
+          ],
+          "properties": {
+            "sessionId": {
+              "$ref": "#/$defs/sessionId"
+            },
+            "stopped": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "noInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "$comment": "computer_capabilities takes no input."
     }
   }
 }

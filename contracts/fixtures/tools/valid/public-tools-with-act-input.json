@@ -25,7 +25,10 @@
         "targetHandle": "tgt-3f9a",
         "actionId": "act-0009",
         "action": {
-          "kind": "click"
+          "kind": "click",
+          "targetHandle": "tgt-3f9a",
+          "button": "left",
+          "count": 1
         }
       }
     },

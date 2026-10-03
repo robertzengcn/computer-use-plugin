@@ -8,22 +8,21 @@ export interface GroundingRequest {
   sessionGeneration: number;
   observationId: string;
   modelConfigurationId: string;
-  image: RequestImage;
+  image: {
+    format: 'png' | 'jpeg';
+    widthPx: number;
+    heightPx: number;
+    sha256?: string;
+    crop?: {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    };
+  };
   task: {
     description: string;
     maxCandidates?: number;
     pixelBudget?: number;
-  };
-}
-export interface RequestImage {
-  format: 'png' | 'jpeg';
-  widthPx: number;
-  heightPx: number;
-  sha256?: string;
-  crop?: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
   };
 }

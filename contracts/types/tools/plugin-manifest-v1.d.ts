@@ -21,12 +21,14 @@ export interface CommonPluginManifest {
     minVersion: string;
   }[];
   backend?: {
-    windows: BackendStatus;
-    macos: BackendStatus;
+    windows: {
+      status: 'spike-pending' | 'candidate' | 'qualified';
+      artifactDigest?: string;
+    };
+    macos: {
+      status: 'spike-pending' | 'candidate' | 'qualified';
+      artifactDigest?: string;
+    };
   };
   skills?: string[];
-}
-export interface BackendStatus {
-  status: 'spike-pending' | 'candidate' | 'qualified';
-  artifactDigest?: string;
 }

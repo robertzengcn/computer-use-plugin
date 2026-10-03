@@ -1,6 +1,4 @@
 /** GENERATED from contracts/ — do not edit; regenerate with npm run contracts:build. */
-export type PermissionState = 'granted' | 'denied' | 'not_determined' | 'unsupported_platform';
-
 /**
  * Backend/protocol versions, supported actions, permissions, grounder state and planner mode reported by computer_capabilities (design §3.1).
  */
@@ -16,9 +14,9 @@ export interface DesktopBackendCapabilities {
     ...('click' | 'type' | 'scroll' | 'move' | 'drag' | 'keys' | 'key')[]
   ];
   permissions: {
-    accessibility: PermissionState;
-    screenRecording: PermissionState;
-    inputMonitoring: PermissionState;
+    accessibility: 'granted' | 'denied' | 'not_determined' | 'unsupported_platform';
+    screenRecording: 'granted' | 'denied' | 'not_determined' | 'unsupported_platform';
+    inputMonitoring: 'granted' | 'denied' | 'not_determined' | 'unsupported_platform';
   };
   plannerMode: 'local_only' | 'visual_planner';
   displaySupport: {

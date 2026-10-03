@@ -1,6 +1,4 @@
 /** GENERATED from contracts/ — do not edit; regenerate with npm run contracts:build. */
-export type LicenceId = 'apache-2.0' | 'mit' | 'bsd-3-clause' | 'other-commercial-ok' | 'qwen-research-non-commercial';
-
 /**
  * A model package is a set of individually hashed files, not an archive (design §6.4). This manifest records the full reproducibility and licence identity; release tooling blocks non-commercial licence chains (CU-INST-11).
  */
@@ -11,10 +9,10 @@ export interface GroundingModelPackageManifest {
   upstream: {
     modelId: string;
     revision: string;
-    licence: LicenceId;
+    licence: 'apache-2.0' | 'mit' | 'bsd-3-clause' | 'other-commercial-ok' | 'qwen-research-non-commercial';
     baseModel: {
       modelId: string;
-      licence: LicenceId;
+      licence: 'apache-2.0' | 'mit' | 'bsd-3-clause' | 'other-commercial-ok' | 'qwen-research-non-commercial';
     };
   };
   identity: {
@@ -487,12 +485,12 @@ export interface GroundingModelPackageManifest {
   licences: [
     {
       component: string;
-      licence: LicenceId;
+      licence: 'apache-2.0' | 'mit' | 'bsd-3-clause' | 'other-commercial-ok' | 'qwen-research-non-commercial';
       noticePath: string;
     },
     ...{
       component: string;
-      licence: LicenceId;
+      licence: 'apache-2.0' | 'mit' | 'bsd-3-clause' | 'other-commercial-ok' | 'qwen-research-non-commercial';
       noticePath: string;
     }[]
   ];

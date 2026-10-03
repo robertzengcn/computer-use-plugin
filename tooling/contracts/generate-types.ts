@@ -23,7 +23,7 @@ export async function generateDeclarations(contractsDir: string): Promise<Map<st
     // Family-qualified name (e.g. "desktop/error-v1") keeps families with
     // identical file baselines from colliding in the output map.
     const name = relativePath.replace(/\.schema\.json$/, '');
-    const selfContained = inlineExternalRefs(schemas.get($id), schemas, 0);
+    const selfContained = inlineExternalRefs(schemas.get($id), schemas, 0, $id);
     const content = await compile(selfContained as JSONSchema, toPascalCase(name), {
       bannerComment: '',
       cwd: contractsDir,
@@ -38,35 +38,50 @@ export async function generateDeclarations(contractsDir: string): Promise<Map<st
 const ID_PREFIX = 'https://aifetchly.dev/schemas/computer-use/';
 const MAX_INLINE_DEPTH = 8;
 
-function inlineExternalRefs(node: unknown, schemas: Map<string, unknown>, refDepth: number): unknown {
+function inlineExternalRefs(node: unknown, schemas: Map<string, unknown>, refDepth: number, baseId: string): unknown {
   if (refDepth > MAX_INLINE_DEPTH) {
     throw new Error('schema ref inlining exceeded expansion guard (cyclic refs?)');
   }
   if (Array.isArray(node)) {
-    return node.map((item) => inlineExternalRefs(item, schemas, refDepth));
+    return node.map((item) => inlineExternalRefs(item, schemas, refDepth, baseId));
   }
   if (node !== null && typeof node === 'object') {
     const record = node as Record<string, unknown>;
     const ref = typeof record.$ref === 'string' ? record.$ref : undefined;
-    if (ref !== undefined && ref.startsWith(ID_PREFIX)) {
-      const [base, ...pointerParts] = ref.split('#');
-      const target = schemas.get(base ?? '');
-      if (target === undefined) {
-        throw new Error(`ref target not in registry: ${ref}`);
+    if (ref !== undefined) {
+      let targetBase: string | undefined;
+      let pointer = '';
+      if (ref.startsWith(ID_PREFIX)) {
+        const hashIndex = ref.indexOf('#');
+        targetBase = hashIndex === -1 ? ref : ref.slice(0, hashIndex);
+        pointer = hashIndex === -1 ? '' : ref.slice(hashIndex + 1);
+      } else if (ref.startsWith('#/')) {
+        // Internal ref: resolves against the base schema currently inlined.
+        targetBase = baseId;
+        pointer = ref.slice(1);
       }
-      const pointer = pointerParts.join('#').replace(/^\/+/, '');
-      let resolved: unknown = target;
-      for (const segment of pointer.split('/').filter((s) => s.length > 0)) {
-        if (resolved === null || typeof resolved !== 'object') {
-          throw new Error(`bad ref pointer: ${ref}`);
+      if (targetBase !== undefined) {
+        const target = schemas.get(targetBase);
+        if (target === undefined) {
+          throw new Error(`ref target not in registry: ${ref}`);
         }
-        resolved = (resolved as Record<string, unknown>)[segment];
+        let resolved: unknown = target;
+        const resolvedBaseId =
+          (target as { $id?: unknown }).$id !== undefined && typeof (target as { $id?: string }).$id
+            ? ((target as { $id: string }).$id)
+            : targetBase;
+        for (const segment of pointer.split('/').filter((s) => s.length > 0)) {
+          if (resolved === null || typeof resolved !== 'object') {
+            throw new Error(`bad ref pointer: ${ref}`);
+          }
+          resolved = (resolved as Record<string, unknown>)[segment];
+        }
+        return inlineExternalRefs(resolved, schemas, refDepth + 1, resolvedBaseId);
       }
-      return inlineExternalRefs(resolved, schemas, refDepth + 1);
     }
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(record)) {
-      result[key] = inlineExternalRefs(value, schemas, refDepth);
+      result[key] = inlineExternalRefs(value, schemas, refDepth, baseId);
     }
     return result;
   }

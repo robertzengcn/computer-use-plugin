@@ -5,7 +5,29 @@
 export type DesktopBackendError = {
   [k: string]: unknown;
 } & {
-  errorCode: ErrorCode;
+  errorCode:
+    | 'ai_disabled'
+    | 'permission_required'
+    | 'desktop_busy'
+    | 'unsupported_target'
+    | 'unsupported_display_configuration'
+    | 'runtime_not_ready'
+    | 'model_not_ready'
+    | 'target_not_found'
+    | 'target_ambiguous'
+    | 'invalid_grounding_output'
+    | 'stale_observation'
+    | 'focus_changed'
+    | 'action_not_authorized'
+    | 'action_cancelled'
+    | 'execution_uncertain'
+    | 'verification_failed'
+    | 'backend_unavailable'
+    | 'resource_limit'
+    | 'protocol_mismatch'
+    | 'planner_mode_unavailable'
+    | 'stop_hotkey_unavailable'
+    | 'host_elevated';
   message: string;
   stage:
     | 'startup'
@@ -22,26 +44,3 @@ export type DesktopBackendError = {
   reason?: 'elevated_window' | 'own_window' | 'protected_view' | 'unsupported_app' | 'unsupported_display';
   readiness?: string;
 };
-export type ErrorCode =
-  | 'ai_disabled'
-  | 'permission_required'
-  | 'desktop_busy'
-  | 'unsupported_target'
-  | 'unsupported_display_configuration'
-  | 'runtime_not_ready'
-  | 'model_not_ready'
-  | 'target_not_found'
-  | 'target_ambiguous'
-  | 'invalid_grounding_output'
-  | 'stale_observation'
-  | 'focus_changed'
-  | 'action_not_authorized'
-  | 'action_cancelled'
-  | 'execution_uncertain'
-  | 'verification_failed'
-  | 'backend_unavailable'
-  | 'resource_limit'
-  | 'protocol_mismatch'
-  | 'planner_mode_unavailable'
-  | 'stop_hotkey_unavailable'
-  | 'host_elevated';
