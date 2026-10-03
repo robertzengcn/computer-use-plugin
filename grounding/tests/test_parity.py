@@ -55,3 +55,23 @@ def test_region_hit_agreement() -> None:
 def test_region_hit_empty_reference_rejected() -> None:
     with pytest.raises(ParityError):
         region_hit_agreement([], ())
+
+
+def test_empty_stages_rejected_b10() -> None:
+    with pytest.raises(ParityError, match="empty"):
+        stage_compare("x", [], [], TOL)
+    with pytest.raises(ParityError, match="non-empty stage list"):
+        first_failing_stage([])
+
+
+def test_nan_and_infinity_rejected_b10() -> None:
+    with pytest.raises(ParityError, match="not a finite number"):
+        stage_compare("x", [1.0], [float("nan")], TOL)
+    with pytest.raises(ParityError, match="not a finite number"):
+        stage_compare("x", [float("inf")], [1.0], TOL)
+
+
+def test_invalid_tolerances_rejected_b10() -> None:
+    for bad in ({"absTolerance": -0.1, "relTolerance": 0.0}, {"absTolerance": float("nan"), "relTolerance": 0.0}, {"absTolerance": 0.0, "relTolerance": float("inf")}):
+        with pytest.raises(ParityError, match="finite and non-negative"):
+            stage_compare("x", [1.0], [1.0], bad)

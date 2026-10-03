@@ -6,6 +6,7 @@ import pytest
 
 from aifetchly_grounding.export.manifest import (
     FileEntry,
+    GraphEntry,
     LicenceBlockedError,
     LicenceEntry,
     ManifestError,
@@ -32,6 +33,18 @@ def inputs(**overrides: object) -> ManifestInputs:
         ),
         "parity_report_sha256": SHA,
         "parity_fixture_count": 12,
+        "exporter": "torch-onnx 2.6",
+        "opset": 17,
+        "preprocessing": {
+            "patchSize": 14, "mergeSize": 2, "temporalPatchSize": 2,
+            "pointerPadTokenId": 151661,
+            "pixelBounds": {"minWidthPx": 224, "maxWidthPx": 3584, "minHeightPx": 224, "maxHeightPx": 3584},
+            "defaultPixelBudget": 1500000,
+        },
+        "graphs": (GraphEntry(name="pointer_head.onnx", inputs=("i",), outputs=("o",)),),
+        "execution_providers": ("cpu",),
+        "health_image_path": "health/fixture.png",
+        "health_expected_path": "health/expected.json",
     }
     base.update(overrides)
     return ManifestInputs(**base)  # type: ignore[arg-type]
@@ -73,3 +86,33 @@ def test_bad_hash_rejected() -> None:
 def test_empty_files_rejected() -> None:
     with pytest.raises(ManifestError, match="no files"):
         build_manifest(inputs(files=()))
+
+
+def test_builder_output_passes_canonical_model_manifest_v1() -> None:
+    # B08: the builder's actual output validates against the canonical schema
+    # rather than only handwritten fixture manifests passing.
+    import json
+    from pathlib import Path
+
+    from jsonschema import FormatChecker
+    from jsonschema.validators import validator_for
+    from referencing import Registry, Resource
+    from referencing.jsonschema import DRAFT202012
+
+    repo_root = Path(__file__).resolve().parents[2]
+    contracts = repo_root / "contracts"
+    registry_index = json.loads((contracts / "registry.json").read_text())
+    resources = {}
+    for entry in registry_index["schemas"]:
+        schema = json.loads((contracts / entry["path"]).read_text())
+        resources[entry["$id"]] = Resource.from_contents(schema, default_specification=DRAFT202012)
+    registry = Registry().with_resources(resources.items())
+    model_schema = resources[
+        "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json"
+    ].contents
+    validator = validator_for(model_schema, default=DRAFT202012)(
+        model_schema, registry=registry, format_checker=FormatChecker()
+    )
+    manifest = build_manifest(inputs())
+    errors = list(validator.iter_errors(manifest))
+    assert not errors, [e.message for e in errors]

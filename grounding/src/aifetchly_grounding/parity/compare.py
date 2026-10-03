@@ -1,9 +1,12 @@
 """Parity comparison cores (design §6.3): per-stage tensor tolerances and
 region-hit agreement. Pure functions over plain sequences so parity policy is
-testable without any ML framework installed."""
+testable without any ML framework installed. Empty stages, non-finite tensor
+values and invalid tolerance profiles fail explicitly — invalid or missing
+model output can never be recorded as passing parity (B10)."""
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
@@ -28,6 +31,14 @@ class Region:
     h: float
 
 
+def _require_finite(stage: str, name: str, values: Sequence[float]) -> None:
+    if len(values) == 0:
+        raise ParityError(f"{stage}: {name} stage is empty; parity needs real tensor samples")
+    for index, value in enumerate(values):
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or math.isnan(value) or math.isinf(value):
+            raise ParityError(f"{stage}: {name}[{index}] is not a finite number ({value!r})")
+
+
 def stage_compare(
     stage: str,
     reference: Sequence[float],
@@ -41,6 +52,10 @@ def stage_compare(
         raise ParityError(f"{stage}: tolerance profile needs absTolerance and relTolerance")
     abs_tol = float(tolerances["absTolerance"])
     rel_tol = float(tolerances["relTolerance"])
+    if math.isnan(abs_tol) or math.isinf(abs_tol) or abs_tol < 0 or math.isnan(rel_tol) or math.isinf(rel_tol) or rel_tol < 0:
+        raise ParityError(f"{stage}: tolerances must be finite and non-negative (abs={abs_tol!r}, rel={rel_tol!r})")
+    _require_finite(stage, "reference", reference)
+    _require_finite(stage, "actual", actual)
     max_abs = 0.0
     max_rel = 0.0
     for expected, got in zip(reference, actual, strict=True):
@@ -77,7 +92,12 @@ def region_hit_agreement(
 
 
 def first_failing_stage(comparisons: Sequence[StageComparison]) -> str | None:
-    """Name the first failing stage; None when every stage passed."""
+    """Name the first failing stage; None when every stage passed.
+
+    An empty comparison list has not evaluated anything, so it raises rather
+    than implying a passing run (B10)."""
+    if len(comparisons) == 0:
+        raise ParityError("no stage comparisons provided; parity needs a non-empty stage list")
     for comparison in comparisons:
         if not comparison.passed:
             return comparison.stage

@@ -32,6 +32,13 @@ class LicenceEntry:
 
 
 @dataclass(frozen=True)
+class GraphEntry:
+    name: str
+    inputs: tuple[str, ...]
+    outputs: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ManifestInputs:
     runtime_id: str
     version: str
@@ -45,6 +52,13 @@ class ManifestInputs:
     licences: tuple[LicenceEntry, ...]
     parity_report_sha256: str
     parity_fixture_count: int
+    exporter: str
+    opset: int
+    preprocessing: dict[str, object]
+    graphs: tuple[GraphEntry, ...]
+    execution_providers: tuple[str, ...]
+    health_image_path: str
+    health_expected_path: str
 
 
 def check_licences(inputs: ManifestInputs) -> None:
@@ -82,16 +96,22 @@ def build_manifest(inputs: ManifestInputs) -> dict[str, object]:
             "adapterId": "gui-actor-onnx",
             "architecture": "gui-actor-2b-qwen2-vl",
             "manifestVersion": 1,
-            "preprocessingRevision": "prep-v1",
+            "preprocessingRevision": str(inputs.preprocessing.get("preprocessingRevision", "prep-v1")),
             "decodingRevision": "dec-v1",
             "calibrationRevision": "cal-v1",
         },
         "export": {
             "pipelineVersion": "export-v1",
-            "exporter": "pinned-by-spike",
-            "opset": 17,
+            "exporter": inputs.exporter,
+            "opset": inputs.opset,
             "quantization": inputs.quantization,
         },
+        "preprocessing": inputs.preprocessing,
+        "graphs": [
+            {"name": graph.name, "inputs": list(graph.inputs), "outputs": list(graph.outputs)}
+            for graph in inputs.graphs
+        ],
+        "executionProviders": list(inputs.execution_providers),
         "files": [
             {"path": entry.path, "bytes": entry.bytes, "sha256": entry.sha256} for entry in inputs.files
         ],
@@ -103,6 +123,10 @@ def build_manifest(inputs: ManifestInputs) -> dict[str, object]:
             "sha256": inputs.parity_report_sha256,
             "fixtureCount": inputs.parity_fixture_count,
             "status": "candidate",
+        },
+        "healthFixture": {
+            "imagePath": inputs.health_image_path,
+            "expectedPath": inputs.health_expected_path,
         },
         "limits": {
             "maxFiles": 128,
