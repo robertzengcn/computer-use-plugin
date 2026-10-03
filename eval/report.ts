@@ -59,6 +59,8 @@ export interface EvaluationReport {
     readonly datasetVersion: string;
     readonly runnerKind: string;
     readonly runnerLabel: string;
+    readonly startedAt?: string;
+    readonly finishedAt?: string;
   };
   readonly configuration: RunnerConfiguration;
   readonly cases: readonly ReportCaseRecord[];
@@ -77,17 +79,40 @@ const RUNNER_LABELS: Record<string, string> = {
 export function evaluateCases(
   inputs: readonly EvalCaseInput[],
   outcomes: readonly EvalCaseOutcome[],
-  run: { mode: 'replay' | 'compare'; datasetId: string; datasetVersion: string; runnerKind: string },
+  run: {
+    mode: 'replay' | 'compare';
+    datasetId: string;
+    datasetVersion: string;
+    runnerKind: string;
+    startedAt?: string;
+    finishedAt?: string;
+  },
   configuration: RunnerConfiguration,
+  accounting?: { readonly extraRecords?: number },
 ): EvaluationReport {
   const outcomeByCase = new Map(outcomes.map((outcome) => [outcome.caseId, outcome] as const));
   const caseRecords: ReportCaseRecord[] = inputs.map((input) => {
     const outcome = outcomeByCase.get(input.caseId);
+    if (input.contentSha256 === undefined) {
+      // B17: a case without a content hash has no verifiable identity and
+      // can never silently count as identical evidence.
+      return {
+        caseId: input.caseId,
+        split: input.split,
+        fixtureHash: 'missing',
+        expected: input.expected.kind,
+        actual: 'no-result',
+        regionHit: null,
+        status: 'skipped' as CaseStatus,
+        reason: 'case has no contentSha256; fixture identity is unverifiable',
+        inferenceMs: 0,
+      };
+    }
     if (outcome === undefined) {
       return {
         caseId: input.caseId,
         split: input.split,
-        fixtureHash: input.contentSha256 ?? 'unversioned',
+        fixtureHash: input.contentSha256,
         expected: input.expected.kind,
         actual: 'no-result',
         regionHit: null,
@@ -115,7 +140,7 @@ export function evaluateCases(
       return {
         caseId: input.caseId,
         split: input.split,
-        fixtureHash: input.contentSha256 ?? 'unversioned',
+        fixtureHash: input.contentSha256 ?? 'missing',
         expected: 'absent',
         actual: `${outcome.candidates.length} candidate(s)`,
         regionHit: null,
@@ -129,7 +154,7 @@ export function evaluateCases(
     return {
       caseId: input.caseId,
       split: input.split,
-      fixtureHash: input.contentSha256 ?? 'unversioned',
+      fixtureHash: input.contentSha256 ?? 'missing',
       expected: 'ambiguous',
       actual: `${outcome.candidates.length} candidate(s)`,
       regionHit: null,
@@ -155,6 +180,9 @@ export function evaluateCases(
   }
   for (const record of caseRecords.filter((entry) => entry.status === 'skipped')) {
     missingEvidence.push(`case ${record.caseId} skipped: ${record.reason}`);
+  }
+  if ((accounting?.extraRecords ?? 0) > 0) {
+    missingEvidence.push(`${accounting?.extraRecords} recorded evidence case(s) are not covered by the expected case set`);
   }
 
   const report: EvaluationReport = {
@@ -191,20 +219,23 @@ export function renderJsonReport(report: EvaluationReport): string {
 }
 
 export function renderHtmlReport(report: EvaluationReport): string {
+  // B18: every externally sourced string (ids, splits, labels, revisions,
+  // reasons) is escaped; only literal markup is trusted.
   const rows = report.cases
     .map(
       (record) =>
-        `<tr><td>${record.caseId}</td><td>${record.split}</td><td>${record.status}</td><td>${record.regionHit ?? '—'}</td><td>${record.inferenceMs}</td><td>${escapeHtml(record.reason)}</td></tr>`,
+        `<tr><td>${escapeHtml(record.caseId)}</td><td>${escapeHtml(record.split)}</td><td>${escapeHtml(record.status)}</td><td>${record.regionHit ?? '—'}</td><td>${record.inferenceMs}</td><td>${escapeHtml(record.reason)}</td></tr>`,
     )
     .join('\n');
   const aggregate = report.aggregate;
+  const config = report.configuration;
   return `<!doctype html>
-<html><head><meta charset="utf-8"><title>Eval report ${report.run.datasetId}</title>
+<html><head><meta charset="utf-8"><title>Eval report ${escapeHtml(report.run.datasetId)}</title>
 <style>body{font-family:system-ui,sans-serif;margin:2rem}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 8px;font-size:14px}</style>
 </head><body>
 <h1>Computer Use evaluation report</h1>
-<p>dataset <b>${report.run.datasetId}</b> v${report.run.datasetVersion} — mode ${report.run.mode} — runner ${report.run.runnerLabel}</p>
-<p>model configuration <code>${report.configuration.modelConfigurationId}</code> (prep ${report.configuration.preprocessingRevision}, decode ${report.configuration.decodingRevision}, cal ${report.configuration.calibrationRevision})</p>
+<p>dataset <b>${escapeHtml(report.run.datasetId)}</b> v${escapeHtml(report.run.datasetVersion)} — mode ${escapeHtml(report.run.mode)} — runner ${escapeHtml(report.run.runnerLabel)}</p>
+<p>model configuration <code>${escapeHtml(config.modelConfigurationId)}</code> (prep ${escapeHtml(config.preprocessingRevision)}, decode ${escapeHtml(config.decodingRevision)}, cal ${escapeHtml(config.calibrationRevision)})</p>
 <p>planned ${aggregate.planned} · executed ${aggregate.executed} · passed ${aggregate.passed} · failed ${aggregate.failed} · skipped ${aggregate.skipped} · region-hit ${aggregate.regionHitRate ?? '—'} · absence false-accepts ${aggregate.absenceFalseAccepts}</p>
 <table><tr><th>case</th><th>split</th><th>status</th><th>hit</th><th>ms</th><th>reason</th></tr>
 ${rows}

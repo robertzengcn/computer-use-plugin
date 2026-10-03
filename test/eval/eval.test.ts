@@ -95,7 +95,7 @@ describe('eval compare (identical evidence)', () => {
   it('compares two configurations on the same dataset', async () => {
     const { io, stdout } = capture();
     const code = await runCli(
-      ['compare', '--dataset', 'w1-smoke', '--configs', 'synthetic-deterministic,recorded'],
+      ['compare', '--dataset', 'w1-smoke', '--configs', 'synthetic-deterministic,synthetic-b'],
       evalCommands,
       io,
     );
@@ -103,7 +103,19 @@ describe('eval compare (identical evidence)', () => {
     const output = stdout.join('');
     expect(output).toMatch(/identical evidence: true/);
     expect(output).toMatch(/synthetic-deterministic: region-hit/);
+    expect(output).toMatch(/synthetic-b: region-hit/);
     expect([0, 1]).toContain(code);
+  });
+
+  it('rejects recorded profiles in compare instead of substituting synthetic (B16)', async () => {
+    const { io, stdout, stderr } = capture();
+    const code = await runCli(
+      ['compare', '--dataset', 'w1-smoke', '--configs', 'synthetic-deterministic,recorded'],
+      evalCommands,
+      io,
+    );
+    expect(code).toBe(2);
+    expect(stdout.join('') + stderr.join('\n')).toMatch(/compare runs synthetic profiles only/);
   });
 
   it('rejects compare with fewer than two configs', async () => {
@@ -125,7 +137,9 @@ describe('no-backend invariant (CU-PLUGIN-12: replay cannot execute desktop inpu
           walk(full);
         } else if (entry.name.endsWith('.ts')) {
           const source = readFileSync(full, 'utf8');
-          const withoutComments = source.replace(/^\s*\/\/.*$/gm, '');
+          const withoutComments = source
+            .replace(/^\s*\/\/.*$/gm, '')
+            .replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '""');
           if (forbidden.test(withoutComments)) {
             offenders.push(full);
           }

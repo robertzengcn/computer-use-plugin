@@ -15,6 +15,9 @@ export interface RunnerConfiguration {
   readonly preprocessingRevision: string;
   readonly decodingRevision: string;
   readonly calibrationRevision: string;
+  readonly onnxRuntimeVersion?: string;
+  readonly executionProvider?: 'dml' | 'coreml' | 'cpu';
+  readonly modelManifestSha256?: string;
 }
 
 export interface RunnerProfile {
@@ -131,6 +134,9 @@ export interface TraceBundleManifest {
     readonly preprocessingRevision: string;
     readonly decodingRevision: string;
     readonly calibrationRevision: string;
+    readonly onnxRuntimeVersion?: string;
+    readonly executionProvider?: 'dml' | 'coreml' | 'cpu';
+    readonly modelManifestSha256?: string;
   };
   readonly steps: readonly {
     readonly stepId: string;
@@ -145,30 +151,69 @@ export interface GroundingRecord {
   readonly inferenceMs: number;
 }
 
+/** Path containment for bundle-relative references (B09). */
+function insideBundle(target: string): boolean {
+  if (target.length === 0 || target.startsWith('/') || /^[A-Za-z]:[\\/]/.test(target)) {
+    return false;
+  }
+  const parts = target.split('/');
+  let depth = 0;
+  for (const part of parts) {
+    if (part === '' || part === '.') {
+      continue;
+    }
+    if (part === '..') {
+      depth -= 1;
+      if (depth < 0) {
+        return false;
+      }
+    } else {
+      depth += 1;
+    }
+  }
+  return true;
+}
+
 /** Load a trace bundle's manifest + per-step grounding records. */
 export async function loadTraceBundle(bundleDir: string): Promise<{
   manifest: TraceBundleManifest;
   records: readonly GroundingRecord[];
   annotations: ReadonlyMap<string, BundleAnnotation>;
+  annotationHashes?: Readonly<Record<string, string>> | undefined;
 }> {
   const manifest = JSON.parse(await readFile(join(bundleDir, 'manifest.json'), 'utf8')) as TraceBundleManifest;
   const records: GroundingRecord[] = [];
+  const seenCases = new Set<string>();
   for (const step of manifest.steps) {
     if (step.grounding === undefined) {
       continue;
     }
+    if (!insideBundle(step.grounding)) {
+      throw new Error(`trace bundle step '${step.stepId}' grounding path escapes the bundle: ${step.grounding}`);
+    }
     const grounding = JSON.parse(await readFile(join(bundleDir, step.grounding), 'utf8')) as GroundingRecord;
+    if (seenCases.has(grounding.caseId)) {
+      throw new Error(`duplicate recorded case id in bundle: ${grounding.caseId}`);
+    }
+    seenCases.add(grounding.caseId);
     records.push(grounding);
   }
   const annotations = new Map<string, BundleAnnotation>();
   const annotationsRaw = await readFile(join(bundleDir, 'annotations.json'), 'utf8').catch(() => undefined);
+  let annotationHashes: Record<string, string> | undefined;
   if (annotationsRaw !== undefined) {
-    const parsed = JSON.parse(annotationsRaw) as { cases?: Record<string, BundleAnnotation> };
+    const parsed = JSON.parse(annotationsRaw) as {
+      cases?: Record<string, BundleAnnotation>;
+      contentSha256?: Record<string, string>;
+    };
     for (const [caseId, annotation] of Object.entries(parsed.cases ?? {})) {
       annotations.set(caseId, annotation);
     }
+    if (parsed.contentSha256 !== undefined) {
+      annotationHashes = parsed.contentSha256;
+    }
   }
-  return { manifest, records, annotations };
+  return { manifest, records, annotations, annotationHashes };
 }
 
 /** Human label for one recorded case (design §3.6 annotations.json). */

@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "w1-smoke",
+  "version": "0.1.0",
+  "description": "Synthetic W-1 Excel grounding targets; smoke-scale corpus for replay/compare tooling.",
+  "cases": [
+    {
+      "id": "w1-name-box-100",
+      "consentClass": "synthetic",
+      "split": "training",
+      "taskDescription": "Name Box at 100% scaling, light theme",
+      "contentSha256": "6225755ad978987d59838bd1eb4066d6799f18dc738bf352bdfe1251a0083cdd",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 24,
+          "y": 28,
+          "w": 140,
+          "h": 22
+        }
+      }
+    },
+    {
+      "id": "w1-sheet-tab-cjk",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Sheet tab 客户名单 at 150% scaling, Simplified Chinese UI",
+      "contentSha256": "17bd56a26cea72d4456090c119d01aaeeeeb27369e3eca95d246df72d2a0b40d",
+      "displayMetadata": {
+        "scaling": 1.5,
+        "locale": "zh-CN",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 460,
+          "y": 1042,
+          "w": 96,
+          "h": 26
+        }
+      }
+    },
+    {
+      "id": "w1-filter-arrow",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Filter dropdown arrow on the email header",
+      "contentSha256": "e6676df3401f5be0e35c09eafed1ab1b80c236863e0f70a930b93e6695d41b54",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "dark"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 512,
+          "y": 190,
+          "w": 18,
+          "h": 18
+        }
+      }
+    },
+    {
+      "id": "w1-ribbon-icon-only",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Icon-only ribbon button (Merge & Center) in a collapsed ribbon group",
+      "contentSha256": "e9af2dcd8813c07de019cf98db7271ccf6d0800d5e0445755309fa9595a3aa36",
+      "displayMetadata": {
+        "scaling": 1.5,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 232,
+          "y": 118,
+          "w": 32,
+          "h": 32
+        }
+      }
+    },
+    {
+      "id": "w1-gallery-swatch",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Table style gallery swatch, second row third column",
+      "contentSha256": "cc4cc564f198c20e6330064a070e1ec6fad101b39ac725ba52a2cf0568670c92",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 700,
+          "y": 260,
+          "w": 64,
+          "h": 48
+        }
+      }
+    },
+    {
+      "id": "w1-absent-collapsed-group",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Control removed by collapsing the ribbon — must not be found",
+      "contentSha256": "2df51bbddfd8b49f3bb71c6416a668f192f6470c605362442842a9480a78d8d3",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "absent"
+      }
+    },
+    {
+      "id": "w1-ambiguous-repeated-label",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Repeated sheet tab labels — ambiguous target",
+      "contentSha256": "7e93abeb8745bf59f36c48ba1f0b490e00346076eea9f1161a563bc04f400162",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "en-US",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "ambiguous"
+      }
+    },
+    {
+      "id": "w1-header-cell-zh",
+      "consentClass": "synthetic",
+      "split": "regression",
+      "taskDescription": "Header cell 电子邮件 in the Chinese workbook fixture",
+      "contentSha256": "f347a058dfd28961ef429245154fab061a82593af20eacb35ad0a50c01c91026",
+      "displayMetadata": {
+        "scaling": 1.0,
+        "locale": "zh-CN",
+        "theme": "light"
+      },
+      "expected": {
+        "kind": "region",
+        "region": {
+          "x": 64,
+          "y": 188,
+          "w": 120,
+          "h": 24
+        }
+      }
+    }
+  ]
+}

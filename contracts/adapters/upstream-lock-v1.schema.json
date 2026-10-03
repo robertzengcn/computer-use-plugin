@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/adapters/upstream-lock-v1.json",
+  "title": "Backend upstream lock",
+  "description": "Pin record for a native backend source (Windows-MCP or the macOS helper). Everything but status:'pinned' makes entrypoints and packaging fail closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "component",
+    "upstream"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "unpinned",
+        "pinned"
+      ]
+    },
+    "component": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "upstream": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "selectedRevision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "sourceSha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "patchSetDigest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "pythonVersion": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 32
+    },
+    "dependencyLockSha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dependencyLock": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 512
+    },
+    "inspectedConstraints": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 2000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "pinned"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "selectedRevision"
+        ]
+      }
+    }
+  ]
+}

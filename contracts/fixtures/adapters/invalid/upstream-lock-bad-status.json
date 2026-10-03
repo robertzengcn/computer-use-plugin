@@ -1,0 +1,5 @@
+{
+  "status": "maybe",
+  "component": "windows-mcp-backend",
+  "upstream": "https://example/Windows-MCP"
+}

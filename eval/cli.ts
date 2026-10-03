@@ -38,13 +38,25 @@ interface DatasetManifest {
   }[];
 }
 
+const DATASET_SCHEMA_ID = 'https://aifetchly.dev/schemas/computer-use/eval/dataset-manifest-v1.json';
+
+/** Validate and load a dataset manifest through the canonical registry (B09). */
 async function loadDataset(evalDir: string, datasetId: string): Promise<DatasetManifest> {
   const raw = await readFile(join(evalDir, 'datasets', datasetId, 'dataset.json'), 'utf8');
-  const manifest = JSON.parse(raw) as DatasetManifest;
-  if (manifest.schemaVersion !== 1) {
-    throw new Error(`dataset ${datasetId}: unsupported schemaVersion ${manifest.schemaVersion}`);
+  const manifest = JSON.parse(raw) as unknown;
+  const { loadContractRegistry } = await import('../tooling/contracts/registry.js');
+  const validator = loadContractRegistry(join(process.cwd(), 'contracts')).compile(DATASET_SCHEMA_ID);
+  if (!validator(manifest)) {
+    const first = validator.errors?.[0];
+    throw new Error(
+      `dataset ${datasetId} fails dataset-manifest-v1: ${first?.instancePath ?? ''} ${first?.message ?? 'invalid'}`,
+    );
   }
-  return manifest;
+  const ids = (manifest as DatasetManifest).cases.map((entry) => entry.id);
+  if (new Set(ids).size !== ids.length) {
+    throw new Error(`dataset ${datasetId}: duplicate case ids`);
+  }
+  return manifest as DatasetManifest;
 }
 
 function datasetInputs(manifest: DatasetManifest): EvalCaseInput[] {
@@ -84,10 +96,10 @@ export const evalCommands: readonly CommandSpec[] = [
       const dataset = datasetId !== undefined
         ? await loadDataset(join(process.cwd(), EVAL_DIR), datasetId)
         : undefined;
-      const { manifest, records, annotations } = await loadTraceBundle(bundle);
+      const { manifest, records, annotations, annotationHashes } = await loadTraceBundle(bundle);
       const expectedSource = dataset !== undefined
         ? { label: datasetId as string, version: dataset.version, cases: dataset.cases }
-        : annotationsSource(manifest.traceId, annotations);
+        : annotationsSource(manifest.traceId, annotations, annotationHashes);
       if (expectedSource === undefined) {
         return {
           outcome: 'invalidArgs',
@@ -139,11 +151,15 @@ export const evalCommands: readonly CommandSpec[] = [
             inferenceMs: result.inferenceMs,
           };
         });
+        // B17: records outside the expected case set must not vanish silently.
+        const recordIds = new Set(records.map((record) => record.caseId));
+        const extra = expectedSource.cases.filter((entry) => !recordIds.has(entry.id)).length;
         const report = evaluateCases(
           inputs,
           outcomes,
-          { mode: 'replay', datasetId: expectedSource.label, datasetVersion: `${expectedSource.version}+trace:${manifest.traceId}`, runnerKind: profile.kind },
+          { mode: 'replay', datasetId: expectedSource.label, datasetVersion: `${expectedSource.version}+trace:${manifest.traceId}`, runnerKind: profile.kind, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() },
           profile.configuration,
+          { extraRecords: records.length - (expectedSource.cases.length - extra) },
         );
         await writeArtifacts(args, report, `replay-${manifest.traceId}`);
         return {
@@ -177,6 +193,15 @@ export const evalCommands: readonly CommandSpec[] = [
       const missing = selected.findIndex((profile) => profile === undefined);
       if (missing >= 0) {
         return { outcome: 'invalidArgs', message: `unknown runner profile '${configNames[missing]}'` };
+      }
+      // B16: compare executes synthetic stubs only. A recorded profile cannot
+      // be silently rescored as if it were a live comparison arm.
+      const nonSynthetic = (selected as RunnerProfile[]).find((profile) => profile.kind !== 'synthetic');
+      if (nonSynthetic !== undefined) {
+        return {
+          outcome: 'invalidArgs',
+          message: `compare runs synthetic profiles only; '${nonSynthetic.name}' is kind '${nonSynthetic.kind}' — use replay for recorded evidence`,
+        };
       }
       const manifest = await loadDataset(join(process.cwd(), EVAL_DIR), datasetId);
       const inputs = datasetInputs(manifest);
@@ -243,6 +268,7 @@ interface ExpectedSource {
 function annotationsSource(
   traceId: string,
   annotations: ReadonlyMap<string, { kind: 'region' | 'absent' | 'ambiguous'; region?: { x: number; y: number; w: number; h: number } }>,
+  contentHashes?: Readonly<Record<string, string>>,
 ): ExpectedSource | undefined {
   if (annotations.size === 0) {
     return undefined;
@@ -255,6 +281,7 @@ function annotationsSource(
       consentClass: 'synthetic' as const,
       split: 'regression' as const,
       taskDescription: '',
+      contentSha256: contentHashes?.[id],
       expected:
         annotation.kind === 'region' && annotation.region !== undefined
           ? { kind: 'region' as const, region: annotation.region }

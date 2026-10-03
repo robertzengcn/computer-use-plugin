@@ -1,5 +1,5 @@
 {
-  "$schema": "./upstream-lock.schema.json",
+  "$schema": "../../contracts/adapters/upstream-lock-v1.schema.json",
   "status": "unpinned",
   "component": "windows-mcp-backend",
   "upstream": "https://github.com/CursorTouch/Windows-MCP",

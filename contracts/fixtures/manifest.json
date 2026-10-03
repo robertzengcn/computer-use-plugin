@@ -2,6 +2,18 @@
   "version": 1,
   "entries": [
     {
+      "schema": "https://aifetchly.dev/schemas/computer-use/adapters/upstream-lock-v1.json",
+      "file": "adapters/invalid/upstream-lock-bad-status.json",
+      "expectation": "invalid",
+      "description": "unknown lock status rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/adapters/upstream-lock-v1.json",
+      "file": "adapters/valid/upstream-lock.json",
+      "expectation": "valid",
+      "description": "unpinned lock shape"
+    },
+    {
       "schema": "https://aifetchly.dev/schemas/computer-use/desktop/action-v1.json",
       "file": "desktop/invalid/action-raw-coordinates.json",
       "expectation": "invalid",
@@ -102,6 +114,18 @@
       "file": "desktop/valid/observation-visual.json",
       "expectation": "valid",
       "description": "observation-visual (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/eval/dataset-manifest-v1.json",
+      "file": "eval/invalid/dataset-manifest-bad-split.json",
+      "expectation": "invalid",
+      "description": "unknown split value rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/eval/dataset-manifest-v1.json",
+      "file": "eval/valid/dataset-manifest.json",
+      "expectation": "valid",
+      "description": "the shipped w1-smoke dataset validates against its own schema"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/grounding/capabilities-v1.json",

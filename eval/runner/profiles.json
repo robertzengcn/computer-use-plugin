@@ -15,9 +15,21 @@
     },
     "synthetic-deterministic": {
       "kind": "synthetic",
-      "description": "Deterministic hash-seeded stub used to exercise replay/compare tooling without models. Never presented as model accuracy (design §8.4 runner labelling).",
+      "description": "Deterministic hash-seeded stub used to exercise replay/compare tooling without models. Never presented as model accuracy (design \u00a78.4 runner labelling).",
       "configuration": {
         "modelConfigurationId": "synthetic-stub@0",
+        "adapterId": "synthetic-test-adapter",
+        "adapterVersion": "0",
+        "preprocessingRevision": "prep-v1",
+        "decodingRevision": "dec-v1",
+        "calibrationRevision": "cal-v1"
+      }
+    },
+    "synthetic-b": {
+      "kind": "synthetic",
+      "description": "Second deterministic stub arm (different configuration id) for compare tooling; never model accuracy.",
+      "configuration": {
+        "modelConfigurationId": "synthetic-stub-b@0",
         "adapterId": "synthetic-test-adapter",
         "adapterVersion": "0",
         "preprocessingRevision": "prep-v1",

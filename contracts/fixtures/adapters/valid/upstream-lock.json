@@ -1,0 +1,5 @@
+{
+  "status": "unpinned",
+  "component": "windows-mcp-backend",
+  "upstream": "https://example/Windows-MCP"
+}
