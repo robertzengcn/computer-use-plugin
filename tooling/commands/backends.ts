@@ -19,13 +19,15 @@ async function readLock(repoRoot: string, relative: string): Promise<UpstreamLoc
   return JSON.parse(await readFile(join(repoRoot, relative), 'utf8')) as UpstreamLock;
 }
 
+// Forward-slash literals so comparisons and subprocess cwd construction are
+// platform-independent (B13); runProcess cwd accepts them on every OS we build on.
 const TARGET_LOCK: Record<string, string> = {
-  'win32-x64': join('adapters', 'windows', 'upstream.lock'),
-  'darwin-arm64': join('adapters', 'macos', 'ghost-os', 'upstream.lock'),
+  'win32-x64': 'adapters/windows/upstream.lock',
+  'darwin-arm64': 'adapters/macos/ghost-os/upstream.lock',
 };
 const TARGET_DIR: Record<string, string> = {
-  'win32-x64': join('adapters', 'windows'),
-  'darwin-arm64': join('adapters', 'macos'),
+  'win32-x64': 'adapters/windows',
+  'darwin-arm64': 'adapters/macos',
 };
 
 export async function backendPrepare(
@@ -81,7 +83,7 @@ export async function backendTest(
     if (!allowInput) {
       return { outcome: 'invalidArgs', message: 'native tests require --allow-input (design §2.2)' };
     }
-    if (dir !== 'adapters/windows') {
+    if (target !== 'win32-x64') {
       return {
         outcome: 'missingPrerequisites',
         message: 'native mac tests are the P3 deliverable after the P0-E decision',

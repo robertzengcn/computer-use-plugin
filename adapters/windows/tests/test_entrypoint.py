@@ -33,3 +33,30 @@ def test_pinned_but_incomplete_lock_refuses() -> None:
 
 def test_main_exit_code_is_prerequisites_missing() -> None:
     assert main() == 3
+
+
+def test_resources_resolve_from_environment_override(tmp_path, monkeypatch) -> None:
+    # B14: an installed wheel resolves resources from packaged data or the
+    # explicit env override — not only the source-checkout layout.
+    from aifetchly_windows import entrypoint
+
+    lock = {"status": "pinned", "selectedRevision": "r1", "pythonVersion": "3.14.1"}
+    (tmp_path / "upstream.lock").write_text(json.dumps(lock))
+    (tmp_path / "tool-allowlist.json").write_text(
+        json.dumps({"version": 1, "policy": "deny-by-default", "allow": ["click"], "deny": []})
+    )
+    monkeypatch.setenv("AIFETCHLY_WINDOWS_RESOURCES", str(tmp_path))
+    allow = entrypoint.require_pinned_backend()
+    assert "click" in allow
+
+
+def test_missing_resources_are_typed_prerequisite_failures(tmp_path, monkeypatch) -> None:
+    from aifetchly_windows import entrypoint
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    monkeypatch.setenv("AIFETCHLY_WINDOWS_RESOURCES", str(empty))
+    monkeypatch.setattr(entrypoint, "PACKAGE_ROOT", empty)  # checkout fallback gone too
+    with pytest.raises(entrypoint.ResourcesUnavailableError, match="upstream.lock"):
+        entrypoint.load_upstream_lock()
+    assert entrypoint.main() == 3  # no traceback, typed failure only

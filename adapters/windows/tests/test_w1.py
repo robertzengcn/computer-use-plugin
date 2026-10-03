@@ -107,3 +107,64 @@ def test_unnamed_tab_is_reported_not_dropped_silently() -> None:
         ],
     })
     assert any("without a name" in note for note in observation.notes)
+
+
+def test_normalize_to_w1_composition() -> None:
+    """B11/B12 acceptance: normalized trees carry grid fields and feed W-1."""
+    from aifetchly_windows.normalize import normalize_ax_tree
+    from aifetchly_windows.w1 import extract_w1_observation
+
+    raw = {
+        "role": "grid",
+        "name": "Sheet1",
+        "children": [
+            {"role": "cell", "name": "Email", "row": 0, "column": 0},
+            {"role": "cell", "name": "Phone", "row": 0, "column": 1},
+            {"role": "cell", "value": "z@example.com", "row": 1, "column": 0, "focused": True},
+        ],
+    }
+    normalized = normalize_ax_tree(raw)
+    flat = [
+        {
+            "role": element.role,
+            "name": element.name,
+            "value": element.value,
+            "row": element.row,
+            "column": element.column,
+            "selected": element.selected,
+            "focused": element.focused,
+        }
+        for element in normalized.elements
+    ]
+    grid = {"role": "grid", "name": "Sheet1", "children": flat}
+    observation = extract_w1_observation(grid)
+    assert observation.headerRow == ("Email", "Phone")
+    assert observation.usedRange == (2, 2)
+    assert observation.activeCell is not None
+    assert observation.activeCell.value == "z@example.com"
+
+
+def test_bounded_walk_rejects_oversized_trees_b12() -> None:
+    from aifetchly_windows.w1 import MAX_WALK_ELEMENTS, W1ObservationError, extract_w1_observation
+
+    huge = {"role": "grid", "children": [{"role": "cell", "row": 0, "column": 0} for _ in range(MAX_WALK_ELEMENTS)]}
+    with pytest.raises(W1ObservationError, match="observation bound"):
+        extract_w1_observation(huge)
+
+
+def test_authoritative_header_and_range_beat_observation_b12() -> None:
+    # A scrolled view: observed rows start at 5, but the tree carries
+    # authoritative headerRow/usedRange metadata.
+    tree = {
+        "role": "grid",
+        "headerRow": ["Full Name", "Email"],
+        "usedRange": [20, 2],
+        "children": [
+            {"role": "cell", "name": "Lead 0006", "row": 5, "column": 0},
+            {"role": "cell", "name": "z@example.com", "row": 5, "column": 1},
+        ],
+    }
+    observation = extract_w1_observation(tree)
+    assert observation.headerRow == ("Full Name", "Email")
+    assert observation.usedRange == (20, 2)
+    assert not any("inferred" in note for note in observation.notes)

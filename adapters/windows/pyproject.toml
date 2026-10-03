@@ -18,6 +18,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/aifetchly_windows"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"tool-allowlist.json" = "src/aifetchly_windows/data/tool-allowlist.json"
+"upstream.lock" = "src/aifetchly_windows/data/upstream.lock"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

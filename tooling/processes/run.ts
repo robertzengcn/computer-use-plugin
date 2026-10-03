@@ -41,7 +41,10 @@ export type ArgvSpec =
     };
 
 const MODULE_PATTERN = /^[a-z_][a-z0-9_.]*$/i;
-const PROJECT_PATTERN = /^[a-z0-9_-]+$/i;
+// Repository-relative project directories (e.g. `grounding`, `adapters/windows`):
+// segments of [a-z0-9_-] joined by forward slashes. Absolute paths, `..` and
+// backslashes stay rejected so the subprocess cwd can never escape the repo (B13).
+const PROJECT_PATTERN = /^(?:[a-z0-9_-]+)(?:\/[a-z0-9_-]+)*$/i;
 
 export function buildArgv(spec: ArgvSpec): string[] {
   switch (spec.kind) {

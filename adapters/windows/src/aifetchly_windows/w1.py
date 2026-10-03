@@ -49,18 +49,33 @@ class W1Observation:
     notes: tuple[str, ...] = field(default=())
 
 
+MAX_WALK_ELEMENTS = 50_000
+MAX_WALK_DEPTH = 128
+
+
 def _walk(node: dict[str, object]) -> list[dict[str, object]]:
+    """Depth- and element-bounded document-order traversal (B12): traversal
+    STOPS at the limits instead of processing everything and flagging later."""
     elements: list[dict[str, object]] = []
-    stack: list[dict[str, object]] = [node]
+    stack: list[tuple[dict[str, object], int]] = [(node, 0)]
     while stack:
-        current = stack.pop()
+        current, depth = stack.pop()
         if not isinstance(current, dict):
             raise W1ObservationError("AX node must be an object")
+        if depth > MAX_WALK_DEPTH:
+            raise W1ObservationError(f"AX tree exceeds depth {MAX_WALK_DEPTH}")
         elements.append(current)
+        if len(elements) >= MAX_WALK_ELEMENTS:
+            raise W1ObservationError(f"AX tree exceeds the {MAX_WALK_ELEMENTS}-element observation bound")
         children = current.get("children")
         if isinstance(children, list):
+            for child in children:
+                if not isinstance(child, dict):
+                    raise W1ObservationError("AX child node must be an object")
             # Reversed so the LIFO stack pops children in document order.
-            stack.extend(reversed([child for child in children if isinstance(child, dict)]))
+            stack.extend(
+                reversed([(child, depth + 1) for child in children if isinstance(child, dict)])
+            )
     return elements
 
 
@@ -130,11 +145,29 @@ def extract_w1_observation(root: dict[str, object]) -> W1Observation:
     max_row = max(cell.row for cell in cells)
     max_column = max(cell.column for cell in cells)
     first_row = min(cell.row for cell in cells)
+    # B12: header and used range are distinguished as OBSERVED facts unless
+    # the tree carries authoritative grid metadata; a scrolled view must not
+    # masquerade as a verified header/used range.
+    authoritative_range = root.get("usedRange") if isinstance(root.get("usedRange"), list) else None
+    authoritative_header = root.get("headerRow") if isinstance(root.get("headerRow"), list) else None
     header_cells = [cell for cell in cells if cell.row == first_row]
-    header_row = tuple(
-        next((cell.name for cell in header_cells if cell.column == index), None)
-        for index in range(max_column + 1)
+    header_row = (
+        tuple(name if isinstance(name, str) else None for name in authoritative_header)
+        if authoritative_header is not None
+        else tuple(
+            next((cell.name for cell in header_cells if cell.column == index), None)
+            for index in range(max_column + 1)
+        )
     )
+    if authoritative_header is None:
+        notes.append(
+            "header inferred from the first observed row; a scrolled view can mislabel it"
+        )
+    if authoritative_range is not None and len(authoritative_range) == 2:
+        used_range = (int(authoritative_range[0]), int(authoritative_range[1]))
+    else:
+        used_range = (max_row - first_row + 1, max_column + 1)
+        notes.append("used range derived from observed extents, not verified grid metadata")
     focused = [cell for cell in cells if cell.focused]
     if len(focused) > 1:
         raise W1ObservationError("multiple focused cells: ambiguous active cell")
@@ -142,7 +175,7 @@ def extract_w1_observation(root: dict[str, object]) -> W1Observation:
 
     return W1Observation(
         headerRow=header_row,
-        usedRange=(max_row - first_row + 1, max_column + 1),
+        usedRange=used_range,
         activeCell=focused[0] if focused else None,
         selection=selected,
         sheetTabs=tuple(sheet_tabs),

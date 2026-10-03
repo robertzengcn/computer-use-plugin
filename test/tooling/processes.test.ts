@@ -95,5 +95,20 @@ describe('buildArgv', () => {
     expect(() =>
       buildArgv({ kind: 'uv-python', project: '../escape', module: 'a.m' }),
     ).toThrow(/invalid project/i);
+    expect(() =>
+      buildArgv({ kind: 'uv-python', project: '/absolute', module: 'a.m' }),
+    ).toThrow(/invalid project/i);
+    expect(() =>
+      buildArgv({ kind: 'uv-python', project: 'C:\\windows', module: 'a.m' }),
+    ).toThrow(/invalid project/i);
+  });
+
+  it('accepts repository-relative project directories like adapters/windows (B13)', () => {
+    expect(
+      buildArgv({ kind: 'uv-python', project: 'adapters/windows', module: 'aifetchly_windows.entrypoint' }),
+    ).toEqual([
+      'uv', 'run', '--locked', '--project', 'adapters/windows',
+      'python', '-m', 'aifetchly_windows.entrypoint',
+    ]);
   });
 });
