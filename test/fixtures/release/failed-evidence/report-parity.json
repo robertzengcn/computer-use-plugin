@@ -1,0 +1,45 @@
+{
+  "schema": "computer-use-eval-report-v1",
+  "run": {
+    "mode": "replay",
+    "datasetId": "w1-smoke",
+    "datasetVersion": "0.1.0+trace:trace-w1-smoke-0001",
+    "runnerKind": "recorded",
+    "runnerLabel": "recorded-evidence (not a model accuracy measurement)"
+  },
+  "configuration": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "gui-actor-onnx",
+    "adapterVersion": "0.1.0",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
+  },
+  "cases": [
+    {
+      "caseId": "w1-name-box-100",
+      "split": "regression",
+      "fixtureHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "expected": "region",
+      "actual": "candidates",
+      "regionHit": true,
+      "status": "pass",
+      "reason": "candidate inside labeled region",
+      "inferenceMs": 434
+    }
+  ],
+  "aggregate": {
+    "planned": 9,
+    "executed": 0,
+    "passed": 0,
+    "failed": 9,
+    "skipped": 9,
+    "regionHitRate": null,
+    "absenceFalseAccepts": 0,
+    "latency": null
+  },
+  "qualification": {
+    "missingEvidence": [],
+    "producerOnly": true
+  }
+}

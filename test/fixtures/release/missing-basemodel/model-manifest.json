@@ -3,22 +3,22 @@
   "runtimeId": "grounding-model-gui-actor-2b-fp16",
   "version": "0.1.0",
   "upstream": {
-    "modelId": "m",
-    "revision": "r",
+    "modelId": "microsoft/GUI-Actor-2B-Qwen2-VL",
+    "revision": "r1",
     "licence": "mit"
   },
   "identity": {
     "groundingContractVersion": 1,
-    "adapterId": "a",
-    "architecture": "ar",
+    "adapterId": "gui-actor-onnx",
+    "architecture": "gui-actor-2b-qwen2-vl",
     "manifestVersion": 1,
-    "preprocessingRevision": "p",
-    "decodingRevision": "d",
-    "calibrationRevision": "c"
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
   },
   "export": {
-    "pipelineVersion": "e",
-    "exporter": "x",
+    "pipelineVersion": "export-v1",
+    "exporter": "torch-onnx 2.6",
     "opset": 17,
     "quantization": "fp16"
   },
@@ -47,30 +47,46 @@
     }
   ],
   "executionProviders": [
+    "dml",
     "cpu"
   ],
   "files": [
     {
       "path": "pointer_head.onnx",
       "bytes": 512,
-      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      "sha256": "9ea2ca99172f8143d19673eb288cb607ce2e87f09914569ac1285981dcb8803c"
+    },
+    {
+      "path": "health/fixture.png",
+      "bytes": 11,
+      "sha256": "a955478a5063e939bdc3936ef8a0674ae86d0cd2d27d32200c6e4db9cebfdc9f"
+    },
+    {
+      "path": "health/expected.json",
+      "bytes": 20,
+      "sha256": "c75d9bf173cb320524d9cc28ca0c63dc351009cd8a3613802a2183c4b651f71d"
     }
   ],
   "licences": [
     {
-      "component": "w",
+      "component": "GUI-Actor weights",
       "licence": "mit",
-      "noticePath": "L"
+      "noticePath": "LICENSES/GUI-ACTOR"
+    },
+    {
+      "component": "Qwen2-VL base",
+      "licence": "apache-2.0",
+      "noticePath": "LICENSES/QWEN2-VL"
     }
   ],
   "parityReport": {
     "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
-    "fixtureCount": 1,
+    "fixtureCount": 12,
     "status": "passed"
   },
   "healthFixture": {
-    "imagePath": "h.png",
-    "expectedPath": "h.json"
+    "imagePath": "health/fixture.png",
+    "expectedPath": "health/expected.json"
   },
   "limits": {
     "maxFiles": 128,

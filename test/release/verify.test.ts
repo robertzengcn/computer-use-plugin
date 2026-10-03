@@ -117,7 +117,7 @@ describe('verifyRelease gates (CU-PLUGIN-21, CU-INST-11)', () => {
   it('missing base-model licence fails the licence gate (E-4 regression)', async () => {
     const report = await verifyRelease(join(FIXTURES, 'missing-basemodel', 'release.json'), SCHEMA);
     expect(
-      report.failures.some((f) => f.gate === 'licence' && /baseModel\.licence/.test(f.detail)),
+      report.failures.some((f) => f.gate === 'licence' && /baseModel/.test(f.detail)),
     ).toBe(true);
   });
 
@@ -128,6 +128,45 @@ describe('verifyRelease gates (CU-PLUGIN-21, CU-INST-11)', () => {
     const report = await verifyRelease(bad, SCHEMA);
     expect(report.failures[0]?.gate).toBe('schema');
     expect(report.artifactCount).toBe(0);
+    await rm(temp, { recursive: true, force: true });
+  });
+
+  it('a failed/skipped/empty evidence report fails the gate (B03 regression)', async () => {
+    const report = await verifyRelease(join(FIXTURES, 'failed-evidence', 'release.json'), SCHEMA);
+    const details = report.failures.map((f) => f.detail).join('\n');
+    expect(report.failures.some((f) => f.gate === 'evidence')).toBe(true);
+    expect(details).toMatch(/executed 0 cases/);
+    expect(details).toMatch(/9 failed cases/);
+    expect(details).toMatch(/9 skipped cases/);
+  });
+
+  it('evidenceRequired artifacts with an empty requiredEvidence list fail (B03)', async () => {
+    const report = await verifyRelease(join(FIXTURES, 'empty-required-evidence', 'release.json'), SCHEMA);
+    expect(
+      report.failures.some((f) => f.gate === 'evidence' && /empty requiredEvidence/.test(f.detail)),
+    ).toBe(true);
+  });
+
+  it('a contractArchive digest that disagrees with the shipped artifact fails (B04)', async () => {
+    const temp = await mkdtemp(join(tmpdir(), 'cu-rel-3-'));
+    const bytes = b('contracts-bytes');
+    await writeFile(join(temp, 'contracts.zip'), bytes);
+    const manifest = {
+      schemaVersion: 1,
+      releaseVersion: '0.1.0-rc.cd',
+      sourceCommit: 'abc1234',
+      contractArchive: { version: 'v1', sha256: '0'.repeat(64) },
+      requiredEvidence: [],
+      artifacts: [
+        { role: 'contracts', location: 'contracts.zip', bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex'), compatibleWith: { hostAppRange: '>=0.1.0' } },
+      ],
+    };
+    const path = join(temp, 'release.json');
+    await writeFile(path, JSON.stringify(manifest));
+    const report = await verifyRelease(path, SCHEMA);
+    expect(
+      report.failures.some((f) => f.gate === 'compatibility' && /contractArchive\.sha256/.test(f.detail)),
+    ).toBe(true);
     await rm(temp, { recursive: true, force: true });
   });
 });

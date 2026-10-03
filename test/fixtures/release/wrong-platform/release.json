@@ -3,8 +3,8 @@
   "releaseVersion": "0.1.0-rc.1",
   "sourceCommit": "abc1234",
   "lockDigests": {
-    "adapters/windows/uv.lock": "1111111111111111111111111111111111111111111111111111111111111111",
-    "grounding/uv.lock": "2222222222222222222222222222222222222222222222222222222222222222"
+    "adapters/windows/uv.lock": "c59bfd458b0c4d3793c2d7d832598e5098bb925f94618a96f1cd82afbb12ab39",
+    "grounding/uv.lock": "2a2793b5a38132be234c63967d89d59baed58a15d55e3c8fb75ac9228feff841"
   },
   "contractArchive": {
     "version": "v1",
@@ -18,13 +18,20 @@
       "role": "contracts",
       "location": "contracts.zip",
       "bytes": 30,
-      "sha256": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11"
+      "sha256": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11",
+      "compatibleWith": {
+        "hostAppRange": ">=0.1.0"
+      }
     },
     {
       "role": "plugin",
       "location": "contracts.zip",
       "bytes": 30,
-      "sha256": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11"
+      "sha256": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11",
+      "compatibleWith": {
+        "hostAppRange": ">=0.1.0"
+      },
+      "noticesPath": "THIRD_PARTY_NOTICES"
     },
     {
       "role": "windows-env",
@@ -32,8 +39,11 @@
       "bytes": 29,
       "sha256": "7495382d2927bee37553c1604898509b1fd2c7bd55837f6fccfa97e7cbf791b1",
       "platform": "darwin-arm64",
-      "launchProfile": "../../adapters/windows/launch-profile.json",
+      "launchProfile": "launch-profile.json",
       "noticesPath": "THIRD_PARTY_NOTICES",
+      "compatibleWith": {
+        "hostAppRange": ">=0.1.0"
+      },
       "evidenceRequired": true
     },
     {
@@ -42,14 +52,20 @@
       "bytes": 39,
       "sha256": "e09f4a72788edf6490f838c5c698fa1085e851725239f0d544e6cd5eb60f966c",
       "platform": "darwin-arm64",
-      "signingIdentity": "Developer ID Application: AiFetchly (SPIKEPENDING)"
+      "signingIdentity": "Developer ID Application: AiFetchly (SPIKEPENDING)",
+      "compatibleWith": {
+        "hostAppRange": ">=0.1.0"
+      }
     },
     {
       "role": "model",
       "location": "model-manifest.json",
-      "bytes": 1895,
-      "sha256": "219b9b478a6db6874558d62231271cec0867eebf00fa59f670d8c689fe0e9a3c",
+      "bytes": 2319,
+      "sha256": "d4c93bec901fb8ef04cfc895efa88c9e376c94e03916057b4720b5adbc432565",
       "modelManifestPath": "model-manifest.json",
+      "compatibleWith": {
+        "runtimeId": "grounding-model-gui-actor-2b-fp16"
+      },
       "evidenceRequired": true
     },
     {

@@ -9,11 +9,13 @@
   "requiredEvidence": [],
   "artifacts": [
     {
-      "role": "windows-env",
+      "role": "contracts",
       "location": "../release-evil/evil.bin",
       "bytes": 16,
       "sha256": "9c5729595fb287cc2a2256280448bbe706c0a866f0372515c7483de2af4e6532",
-      "platform": "win32-x64"
+      "compatibleWith": {
+        "hostAppRange": ">=0.1.0"
+      }
     }
   ]
 }
