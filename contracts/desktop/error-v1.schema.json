@@ -2,48 +2,101 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
   "title": "Desktop backend error",
-  "description": "Stable error contract for desktop backends and public tools (design §3.3). Safe messages only: no tracebacks, secrets, image bytes, absolute paths or argv.",
+  "description": "Stable error contract for desktop backends and public tools (design \u00a73.3). Safe messages only: no tracebacks, secrets, image bytes, absolute paths or argv.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["errorCode", "message", "stage", "retryClass", "correlationId"],
+  "required": [
+    "errorCode",
+    "message",
+    "stage",
+    "retryClass",
+    "correlationId"
+  ],
   "properties": {
-    "errorCode": { "$ref": "#/$defs/errorCode" },
+    "errorCode": {
+      "$ref": "#/$defs/errorCode"
+    },
     "message": {
       "type": "string",
       "minLength": 1,
       "maxLength": 500,
       "$comment": "Safe, user-presentable message. Tokens may not start with an absolute path or Windows drive root.",
-      "not": { "pattern": "(^|\\s)(/|\\\\|[A-Za-z]:[\\\\/])" }
+      "not": {
+        "pattern": "(^|\\s)(/|\\\\|[A-Za-z]:[\\\\/])"
+      }
     },
     "stage": {
       "type": "string",
-      "enum": ["startup", "initialization", "readiness", "observation", "grounding", "dispatch", "completion", "cancellation", "shutdown"]
+      "enum": [
+        "startup",
+        "initialization",
+        "readiness",
+        "observation",
+        "grounding",
+        "dispatch",
+        "completion",
+        "cancellation",
+        "shutdown"
+      ]
     },
     "retryClass": {
       "type": "string",
-      "enum": ["none", "retry_same", "retry_after_reobserve", "handoff"]
+      "enum": [
+        "none",
+        "retry_same",
+        "retry_after_reobserve",
+        "handoff"
+      ]
     },
-    "correlationId": { "type": "string", "minLength": 1, "maxLength": 128 },
-    "reason": {
-      "$comment": "Required on unsupported_target (design §3.3).",
+    "correlationId": {
       "type": "string",
-      "enum": ["elevated_window", "own_window", "protected_view", "unsupported_app", "unsupported_display"]
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "reason": {
+      "$comment": "Required on unsupported_target (design \u00a73.3).",
+      "type": "string",
+      "enum": [
+        "elevated_window",
+        "own_window",
+        "protected_view",
+        "unsupported_app",
+        "unsupported_display"
+      ]
     },
     "readiness": {
       "$comment": "Required on model_not_ready; the host GroundingReadiness value.",
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 64
+      "$ref": "#/$defs/readinessValue"
     }
   },
   "allOf": [
     {
-      "if": { "properties": { "errorCode": { "const": "unsupported_target" } } },
-      "then": { "required": ["reason"] }
+      "if": {
+        "properties": {
+          "errorCode": {
+            "const": "unsupported_target"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reason"
+        ]
+      }
     },
     {
-      "if": { "properties": { "errorCode": { "const": "model_not_ready" } } },
-      "then": { "required": ["readiness"] }
+      "if": {
+        "properties": {
+          "errorCode": {
+            "const": "model_not_ready"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "readiness"
+        ]
+      }
     }
   ],
   "$defs": {
@@ -73,6 +126,22 @@
         "stop_hotkey_unavailable",
         "host_elevated"
       ]
+    },
+    "readinessValue": {
+      "type": "string",
+      "enum": [
+        "unsupported_target",
+        "insufficient_memory",
+        "not_installed",
+        "runtime_required",
+        "model_required",
+        "model_incompatible",
+        "installing",
+        "ready",
+        "update_available",
+        "repair_required"
+      ],
+      "$comment": "Host GroundingReadiness values (AiFetchly design \u00a77.8); unsupported values fail closed."
     }
   }
 }

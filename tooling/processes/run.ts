@@ -82,6 +82,20 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
   const killGraceMs = options.killGraceMs ?? DEFAULT_KILL_GRACE_MS;
   const startedAt = Date.now();
 
+  // B19: an already-aborted signal must launch nothing.
+  if (signal?.aborted) {
+    return Promise.resolve({
+      exitCode: null,
+      outcome: 'cancelled' as const,
+      stdout: '',
+      stderr: '',
+      timedOut: false,
+      cancelled: true,
+      truncated: false,
+      durationMs: 0,
+    });
+  }
+
   return new Promise<ProcessResult>((resolve, reject) => {
     let child: ChildProcess;
     try {
@@ -90,30 +104,33 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
         cwd,
         env: env ?? process.env,
         stdio: ['ignore', 'pipe', 'pipe'],
+        // Own process group so group signals reach descendants (B19).
+        detached: process.platform !== 'win32',
       });
     } catch (error) {
       reject(error instanceof Error ? error : new Error(String(error)));
       return;
     }
 
-    let stdout = '';
-    let stderr = '';
+    let stdout: Buffer<ArrayBufferLike> = Buffer.alloc(0);
+    let stderr: Buffer<ArrayBufferLike> = Buffer.alloc(0);
     let truncated = false;
     let timedOut = false;
     let cancelled = false;
     let settled = false;
 
-    const appendCapped = (chunk: Buffer, current: string): string => {
-      if (Buffer.byteLength(current) >= maxBytes) {
+    const appendCapped = (chunk: Buffer, current: Buffer): Buffer => {
+      if (current.byteLength >= maxBytes) {
         truncated = true;
         return current;
       }
-      const combined = current + chunk.toString('utf8');
-      if (Buffer.byteLength(combined) > maxBytes) {
+      if (current.byteLength + chunk.byteLength > maxBytes) {
         truncated = true;
-        return combined.slice(0, maxBytes);
+        // Byte-accurate cap (B19): slice the BUFFER, not the string — string
+        // slicing counts UTF-16 code units and can split multibyte chars.
+        return Buffer.concat([current, chunk]).subarray(0, maxBytes);
       }
-      return combined;
+      return Buffer.concat([current, chunk]);
     };
 
     child.stdout?.on('data', (chunk: Buffer) => {
@@ -127,8 +144,39 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
       if (child.exitCode !== null || child.signalCode !== null) {
         return;
       }
-      child.kill('SIGTERM');
-      const escalate = setTimeout(() => child.kill('SIGKILL'), killGraceMs);
+      // B19: best-effort descendant cleanup. The child owns its own process
+      // group on POSIX (detached), so the negative PID signal reaches
+      // descendants; Windows taskkill walks the tree explicitly.
+      if (process.platform === 'win32') {
+        child.kill(); // graceful console event first
+        const escalate = setTimeout(() => {
+          if (child.pid !== undefined) {
+            spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { shell: false, stdio: 'ignore' });
+          }
+          child.kill('SIGKILL');
+        }, killGraceMs);
+        escalate.unref();
+        return;
+      }
+      if (child.pid !== undefined) {
+        try {
+          process.kill(-child.pid, 'SIGTERM');
+        } catch {
+          child.kill('SIGTERM');
+        }
+      } else {
+        child.kill('SIGTERM');
+      }
+      const escalate = setTimeout(() => {
+        if (child.pid !== undefined) {
+          try {
+            process.kill(-child.pid, 'SIGKILL');
+          } catch {
+            /* already gone */
+          }
+        }
+        child.kill('SIGKILL');
+      }, killGraceMs);
       escalate.unref();
     };
 
@@ -157,8 +205,8 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
       resolve({
         exitCode,
         outcome,
-        stdout,
-        stderr,
+        stdout: stdout.toString('utf8'),
+        stderr: stderr.toString('utf8'),
         timedOut,
         cancelled,
         truncated,

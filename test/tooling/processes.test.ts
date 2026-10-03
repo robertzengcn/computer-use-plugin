@@ -67,6 +67,28 @@ describe('runProcess', () => {
     expect(result.truncated).toBe(true);
   });
 
+  it('a pre-aborted signal launches nothing and reports cancelled (B19)', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const result = await runProcess({
+      argv: [NODE, '-e', "process.stdout.write('should-never-run')"],
+      signal: controller.signal,
+    });
+    expect(result.cancelled).toBe(true);
+    expect(result.outcome).toBe('cancelled');
+    expect(result.stdout).toBe('');
+  });
+
+  it('byte caps are measured in UTF-8 bytes, not code units (B19)', async () => {
+    const result = await runProcess({
+      argv: [NODE, '-e', "process.stdout.write('\u4e2d\u6587'.repeat(1000))"],
+      maxOutputBytes: 6, // exactly two 3-byte characters
+    });
+    expect(result.stdout).toBe('中文');
+    expect(Buffer.byteLength(result.stdout, 'utf8')).toBe(6);
+    expect(result.truncated).toBe(true);
+  });
+
   it('records durationMs for completed runs', async () => {
     const result = await runProcess({ argv: [NODE, '-e', ''] });
     expect(result.durationMs).toBeGreaterThanOrEqual(0);

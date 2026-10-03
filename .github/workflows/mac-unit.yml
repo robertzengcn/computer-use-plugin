@@ -26,7 +26,7 @@ jobs:
             exit 1
           fi
           node -e "
-            const allow = require('./adapters/macos/ghost-os/tool-allowlist.json');
+            const allow = JSON.parse(require('fs').readFileSync('./adapters/macos/ghost-os/tool-allowlist.json','utf8'));
             const overlap = allow.allow.filter((t) => allow.deny.includes(t));
             if (overlap.length) { console.error('allow/deny overlap', overlap); process.exit(1); }
             if (allow.policy !== 'deny-by-default') { console.error('bad policy'); process.exit(1); }

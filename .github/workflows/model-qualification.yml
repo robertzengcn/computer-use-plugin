@@ -25,6 +25,6 @@ jobs:
       - name: Preflight provider hardware
         run: |
           echo "config: ${{ inputs.config }} on ${{ inputs.provider_hardware }}"
-          node -e "const l=require('./grounding/models.lock.json'); if(l.status!=='approved'){console.error('UNQUALIFIED - models.lock.json not approved');process.exit(1)}"
+          node -e "const l=JSON.parse(require('fs').readFileSync('grounding/models.lock.json','utf8')); if(l.status!=='approved'){console.error('UNQUALIFIED - models.lock.json not approved');process.exit(1)}"
           echo "::error::UNQUALIFIED - provider-matching hardware must be attached and declared; this stub refuses to qualify on CPU" >&2
           exit 1

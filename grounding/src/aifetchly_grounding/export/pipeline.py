@@ -17,8 +17,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-
-from ..reference.runner import MissingToolchainError, MissingWeightsError, require_reference_toolchain
+from ..reference.runner import (
+    MissingToolchainError,
+    MissingWeightsError,
+    require_reference_toolchain,
+)
 
 GROUNDING_ROOT = Path(__file__).resolve().parents[3]
 CONFIGS = GROUNDING_ROOT / "configs"

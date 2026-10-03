@@ -55,23 +55,10 @@ def test_valid_fixtures_pass_in_python(entry: dict[str, str]) -> None:
     assert not errors, f"{entry['file']}: {[e.message for e in errors]}"
 
 
-@pytest.mark.parametrize(
-    "entry",
-    [e for e in manifest_entries() if e["expectation"] == "invalid"],
-    ids=lambda e: e["file"],
-)
-def test_invalid_fixtures_fail_in_python(entry: dict[str, str]) -> None:
-    from jsonschema.validators import validator_for
-
-    schema = SCHEMAS_BY_ID[entry["schema"]].contents
-    validator = validator_for(schema, default=DRAFT202012)(schema, registry=REGISTRY)
-    instance = json.loads((CONTRACTS / "fixtures" / entry["file"]).read_text(encoding="utf-8"))
-    assert list(validator.iter_errors(instance)), f"{entry['file']}: expected to be invalid"
-
-
 def semantic_violations(schema_id: str, instance: Any) -> list[str]:
     """Mirror of tooling/contracts/rules.ts: cross-field bounds the JSON
-    Schemas cannot express, enforced identically in both languages."""
+    Schemas cannot express, enforced identically in both languages (B20
+    consolidation: one definition, schema + semantic coverage)."""
     violations: list[str] = []
     if schema_id.endswith("grounding/result-v1.json"):
         for index, candidate in enumerate(instance.get("candidates", [])):

@@ -21,6 +21,6 @@ jobs:
       - name: Preflight signed-host capabilities
         run: |
           echo "candidate: ${{ inputs.candidate }}"
-          node -e "const l=require('./adapters/macos/ghost-os/upstream.lock'); if(l.status!=='pinned'){console.error('UNQUALIFIED - helper unpinned');process.exit(1)}"
+          node -e "const l=JSON.parse(require('fs').readFileSync('adapters/macos/ghost-os/upstream.lock','utf8')); if(l.status!=='pinned'){console.error('UNQUALIFIED - helper unpinned');process.exit(1)}"
           echo "::error::UNQUALIFIED - needs the controlled signed-host Mac with AiFetchly attribution; hosted runners cannot provide it" >&2
           exit 1

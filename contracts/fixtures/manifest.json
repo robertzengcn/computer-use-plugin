@@ -38,6 +38,12 @@
       "description": "error-unknown-code (invalid)"
     },
     {
+      "schema": "https://aifetchly.dev/schemas/computer-use/desktop/error-v1.json",
+      "file": "desktop/invalid/error-unsupported-readiness.json",
+      "expectation": "invalid",
+      "description": "readiness must be a host GroundingReadiness value (B22)"
+    },
+    {
       "schema": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json",
       "file": "desktop/invalid/observation-bad-captured-at.json",
       "expectation": "invalid",
@@ -228,6 +234,12 @@
       "file": "models/invalid/model-manifest-oversize-file.json",
       "expectation": "invalid",
       "description": "model-manifest-oversize-file (invalid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",
+      "file": "models/invalid/model-manifest-traversal-path.json",
+      "expectation": "invalid",
+      "description": "model package paths cannot traverse upward (B22)"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/models/model-manifest-v1.json",

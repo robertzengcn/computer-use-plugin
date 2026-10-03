@@ -42,5 +42,15 @@ export type DesktopBackendError = {
   retryClass: 'none' | 'retry_same' | 'retry_after_reobserve' | 'handoff';
   correlationId: string;
   reason?: 'elevated_window' | 'own_window' | 'protected_view' | 'unsupported_app' | 'unsupported_display';
-  readiness?: string;
+  readiness?:
+    | 'unsupported_target'
+    | 'insufficient_memory'
+    | 'not_installed'
+    | 'runtime_required'
+    | 'model_required'
+    | 'model_incompatible'
+    | 'installing'
+    | 'ready'
+    | 'update_available'
+    | 'repair_required';
 };

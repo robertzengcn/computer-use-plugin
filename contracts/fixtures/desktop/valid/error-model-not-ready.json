@@ -4,5 +4,5 @@
   "stage": "grounding",
   "retryClass": "none",
   "correlationId": "corr-0181",
-  "readiness": "downloading"
+  "readiness": "installing"
 }

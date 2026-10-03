@@ -6,7 +6,7 @@
  * no implicit native build.
  */
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CommandResult } from '../cli.js';
 import { sha256File } from '../release/hash.js';
@@ -14,6 +14,7 @@ import { sha256File } from '../release/hash.js';
 interface TargetPlan {
   readonly lockPath: string;
   readonly envFiles: readonly string[];
+  readonly requiredPaths: readonly string[];
 }
 
 const WINDOWS: TargetPlan = {
@@ -23,7 +24,11 @@ const WINDOWS: TargetPlan = {
     join('adapters', 'windows', 'tool-allowlist.json'),
     join('adapters', 'windows', 'uv.lock'),
     join('adapters', 'windows', 'upstream.lock'),
+    join('adapters', 'windows', 'pyproject.toml'),
   ],
+  // B06: without the package source the target cannot run; a pin alone is
+  // metadata staging, not a delivered backend.
+  requiredPaths: [join('adapters', 'windows', 'src', 'aifetchly_windows', '__init__.py')],
 };
 
 const MACOS: TargetPlan = {
@@ -32,6 +37,7 @@ const MACOS: TargetPlan = {
     join('adapters', 'macos', 'ghost-os', 'upstream.lock'),
     join('adapters', 'macos', 'ghost-os', 'tool-allowlist.json'),
   ],
+  requiredPaths: [], // helper source arrives with the P0-E/P3 selection
 };
 
 const COMMON_PLUGIN_FILES: readonly string[] = [
@@ -81,8 +87,13 @@ export async function packageBuild(
     };
   }
 
+  // B07: build into a fresh staging directory and swap atomically so stale
+  // files from earlier builds can never survive in the closure.
   const packageDir = join(outRoot, `package-${target}-${lock.selectedRevision.slice(0, 10)}`);
-  await mkdir(packageDir, { recursive: true });
+  const stagingDir = `${packageDir}.staging`;
+  await rm(stagingDir, { recursive: true, force: true });
+  await rm(packageDir, { recursive: true, force: true });
+  await mkdir(stagingDir, { recursive: true });
 
   const included: { path: string; role: string; sha256: string; bytes: number }[] = [];
   const addFile = async (relative: string, role: string): Promise<boolean> => {
@@ -90,7 +101,7 @@ export async function packageBuild(
     if (!(await fileExists(absolute))) {
       return false;
     }
-    const destination = join(packageDir, relative.replaceAll('\\', '/'));
+    const destination = join(stagingDir, relative.replaceAll('\\', '/'));
     await mkdir(join(destination, '..'), { recursive: true });
     await copyFile(absolute, destination);
     included.push({
@@ -118,10 +129,27 @@ export async function packageBuild(
       };
     }
   }
+  for (const required of plan.requiredPaths) {
+    if (!(await fileExists(join(repoRoot, required))) || !(await fileExists(join(repoRoot, 'adapters', 'windows', 'pyproject.toml')))) {
+      return {
+        outcome: 'failed',
+        message: `runnable backend source missing: ${required} — a pinned lock without the package is not a deliverable (B06)`,
+      };
+    }
+  }
+  // The backend package source ships with the closure so extraction is
+  // launchable through the declared profile (B06).
+  if (target === 'win32-x64') {
+    await copyTree(
+      join(repoRoot, 'adapters', 'windows', 'src'),
+      join(stagingDir, 'adapters', 'windows', 'src'),
+      '',
+    );
+  }
   // Skills tree may hold more than the known file; copy anything extra.
   const skillsDir = join(repoRoot, 'plugin', 'skills');
   if (await fileExists(skillsDir)) {
-    for (const extra of await copyTree(skillsDir, join(packageDir, 'plugin', 'skills'), '')) {
+    for (const extra of await copyTree(skillsDir, join(stagingDir, 'plugin', 'skills'), '')) {
       const absolute = join(skillsDir, extra);
       if (!included.some((entry) => entry.path === `plugin/skills/${extra}`)) {
         included.push({
@@ -145,13 +173,17 @@ export async function packageBuild(
     roles: ['plugin', 'env-input'],
     files: included,
     digest,
-    signed: target !== 'darwin-arm64',
+    signed: false,
     notes:
-      target === 'darwin-arm64'
-        ? 'unsigned candidate: signing/notarization is the P3 release step; release:verify rejects a mac-native artifact without a signing identity'
-        : 'executable permissions and signatures must survive extraction (CU-PLUGIN-13)',
+      'signing status derives from release evidence, never from packaging (B06): ' +
+      (target === 'darwin-arm64'
+        ? 'mac-native requires a verified signing identity at release:verify'
+        : 'windows environment integrity is covered by lock hashes; code signing is not claimed'),
   };
-  await writeFile(join(packageDir, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFile(join(stagingDir, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  // B07: finalize atomically — the published directory either fully appears
+  // or stays absent; it never contains a partial or stale mixture.
+  await rename(stagingDir, packageDir);
 
   return {
     outcome: 'ok',

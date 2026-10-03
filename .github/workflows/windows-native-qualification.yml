@@ -24,6 +24,6 @@ jobs:
           # Hosted runners do not prove an unlocked interactive desktop with a
           # licensed Excel install; the real qualification run happens on the
           # controlled self-hosted machine with --allow-input.
-          node -e "const l=require('./adapters/windows/upstream.lock'); if(l.status!=='pinned'){console.error('UNQUALIFIED - upstream unpinned');process.exit(1)}"
+          node -e "const l=JSON.parse(require('fs').readFileSync('adapters/windows/upstream.lock','utf8')); if(l.status!=='pinned'){console.error('UNQUALIFIED - upstream unpinned');process.exit(1)}"
           echo "::error::UNQUALIFIED - hosted runner lacks an interactive desktop session; run on the controlled qualification machine" >&2
           exit 1
