@@ -1,11 +1,14 @@
 # PRD implementation audit and TODO
 
 > **2026-10-04 fix update:** all portable defects **B01–B22 are fixed** with
-> regression tests (see git history from this audit forward). The M01–M09
-> milestone items below remain open where they require Windows hardware,
-> approved model weights + provider GPUs, a Mac, or pinned host/Hub consumer
-> builds; their entries stay accurate as written. The P0 false-qualification
-> gates named in the suggested execution order (B01–B04, B10) are closed.
+> regression tests, and the portable sub-tasks of the milestones landed the
+> same day: M01 lifecycle schemas + semantic rules published as drift-checked
+> data; M02 lock schema/digest validation in backend:prepare; M04 cache
+> verification in model:prepare (never downloads); M05 workbook matrix
+> complete (17 workbooks, full-cell oracle); M09 exact Python patch pins +
+> executable work-package commands + historical TODO banner. What remains of
+> M01–M09 requires Windows hardware, approved weights + provider GPUs, a Mac,
+> or pinned host/Hub consumer builds; those entries stay accurate as written.
 
 Audit date: 2026-10-03. Reviewed commit: `8a1db860fd360ec6124639120a6c8cb9c75fb643`.
 Sources: [plugin PRD v1.5](computer-use-plugin-prd.md) and [technical design v1.5](computer-use-plugin-technical-design.md).
