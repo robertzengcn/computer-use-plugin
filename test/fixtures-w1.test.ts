@@ -16,7 +16,7 @@ interface W1Manifest {
     locale: string;
     rowCount: number;
     headerRow: string[];
-    sampleExpected: string[][];
+    fullExpected: (string | number)[][];
   }[];
   matrixAccounting: { missingCells: string[]; missingCellCount: number };
 }
@@ -51,11 +51,30 @@ describe('W-1 workbook corpus (CU-PLUGIN-11, PRD §4.1)', () => {
   const manifest = loadManifest();
 
   it('every workbook matches its recorded sha256 and row count', () => {
-    expect(manifest.cases.length).toBe(10);
+    expect(manifest.cases.length).toBe(17);
     for (const entry of manifest.cases) {
       const bytes = readFileSync(join(W1_DIR, entry.workbook));
       expect(createHash('sha256').update(bytes).digest('hex'), entry.id).toBe(entry.sha256);
       expect(readSheet(join(W1_DIR, entry.workbook)).length - 1, entry.id).toBe(entry.rowCount);
+    }
+  });
+
+  it('every expected cell matches the workbook exactly (full-cell oracle, M05)', () => {
+    for (const entry of manifest.cases) {
+      const sheet = readSheet(join(W1_DIR, entry.workbook));
+      expect(sheet[0], `${entry.id} header`).toEqual(entry.headerRow);
+      expect(sheet.length - 1, `${entry.id} rows`).toBe(entry.fullExpected.length);
+      for (let row = 0; row < entry.fullExpected.length; row += 1) {
+        const expectedRow = entry.fullExpected[row] ?? [];
+        const actualRow = sheet[row + 1] ?? [];
+        expect(actualRow.length, `${entry.id} row ${row + 2} width`).toBe(expectedRow.length);
+        for (let column = 0; column < expectedRow.length; column += 1) {
+          expect(
+            String(actualRow[column] ?? ''),
+            `${entry.id} cell R${row + 2}C${column + 1}`,
+          ).toBe(String(expectedRow[column] ?? ''));
+        }
+      }
     }
   });
 
@@ -69,7 +88,7 @@ describe('W-1 workbook corpus (CU-PLUGIN-11, PRD §4.1)', () => {
   });
 
   it('data preservation: leading zeros, long IDs, formula-like text stay text', () => {
-    const rows = readSheet(join(W1_DIR, 'workbooks', 'data-preservation.xlsx'));
+    const rows = readSheet(join(W1_DIR, 'workbooks', 'data-preservation-20.xlsx'));
     const values = rows.flat().map(String);
     expect(values).toContain('010-5555'); // leading-zero phone
     expect(values).toContain('02138'); // leading-zero postal
@@ -82,7 +101,7 @@ describe('W-1 workbook corpus (CU-PLUGIN-11, PRD §4.1)', () => {
   });
 
   it('duplicate emails are present exactly as the generator planned', () => {
-    const rows = readSheet(join(W1_DIR, 'workbooks', 'data-preservation.xlsx'));
+    const rows = readSheet(join(W1_DIR, 'workbooks', 'data-preservation-20.xlsx'));
     const emails = rows.slice(1).map((row) => String(row[1]));
     const duplicates = emails.filter((email) => email === 'dup@example.com');
     expect(duplicates.length).toBeGreaterThanOrEqual(2);
@@ -122,10 +141,21 @@ describe('W-1 workbook corpus (CU-PLUGIN-11, PRD §4.1)', () => {
     expect(splits.has('held_out')).toBe(true);
   });
 
-  it('matrix accounting honestly enumerates uncovered cells', () => {
-    expect(manifest.matrixAccounting.missingCellCount).toBeGreaterThan(0);
-    expect(manifest.matrixAccounting.missingCells.length).toBe(
-      manifest.matrixAccounting.missingCellCount,
+  it('matrix accounting reports full coverage of the portable cells', () => {
+    expect(manifest.matrixAccounting.missingCellCount).toBe(0);
+    expect(manifest.matrixAccounting.missingCells).toEqual([]);
+  });
+
+  it('both locales and all row scales exist per family', () => {
+    const coverage = new Set(
+      manifest.cases.map((entry) => `${entry.family}/${entry.locale}/${entry.rowCount}`),
     );
+    for (const locale of ['en-US', 'zh-CN']) {
+      for (const count of [20, 200, 500]) {
+        for (const family of ['layout', 'data-preservation']) {
+          expect(coverage.has(`${family}/${locale}/${count}`), `${family}/${locale}/${count}`).toBe(true);
+        }
+      }
+    }
   });
 });

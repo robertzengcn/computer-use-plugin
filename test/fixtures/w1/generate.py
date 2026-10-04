@@ -159,7 +159,7 @@ def main() -> None:
                 "locale": locale,
                 "rowCount": max(0, len(rows) - 1),
                 "headerRow": rows[0] if rows else [],
-                "sampleExpected": rows[1:4],
+                "fullExpected": rows[1:],
                 "consentClass": "synthetic",
             }
         )
@@ -184,6 +184,22 @@ def main() -> None:
         synthetic_rows(200, "zh-CN", rng),
         "layout",
         "regression",
+        "zh-CN",
+    )
+    case(
+        "w1-populated-20-zh",
+        "populated-20-zh.xlsx",
+        synthetic_rows(20, "zh-CN", rng),
+        "layout",
+        "regression",
+        "zh-CN",
+    )
+    case(
+        "w1-populated-500-zh",
+        "populated-500-zh.xlsx",
+        synthetic_rows(500, "zh-CN", rng),
+        "layout",
+        "held_out",
         "zh-CN",
     )
     reordered = [HEADERS_EN[2], HEADERS_EN[0], HEADERS_EN[1], *HEADERS_EN[3:]]
@@ -215,22 +231,36 @@ def main() -> None:
         "en-US",
     )
 
-    # --- Data-preservation family: every edge value in one small sheet ---
-    preservation_rows = [
-        HEADERS_EN,
-        ["张伟", "zhang.wei@example.com", "010-5555", "02138", "MN-000123456789", ""],
-        ["O'Brien", "dup@example.com", "0911-2020", "08540", "MN-000987654321", "=SUM(A1:A2)"],
-        ["Anne", "dup@example.com", "+1 555 0100", "90210", "123456789012345678", "+1 555 0100"],
-        ["李娜", "li.na@example.com", "021-6789", "01234", "MN-000555000555", "'=NOT_A_FORMULA"],
-    ]
-    case(
-        "w1-data-preservation",
-        "data-preservation.xlsx",
-        preservation_rows,
-        "data-preservation",
-        "regression",
-        "en-US",
-    )
+    # --- Data-preservation family at every scale/locale (matrix completion) ---
+    def preservation_rows(locale: str, count: int) -> list[list[object]]:
+        headers = HEADERS_ZH if locale == "zh-CN" else HEADERS_EN
+        edge: list[list[object]] = [
+            ["张伟", "zhang.wei@example.com", "010-5555", "02138", "MN-000123456789", ""],
+            ["O'Brien", "dup@example.com", "0911-2020", "08540", "MN-000987654321", "=SUM(A1:A2)"],
+            ["Anne", "dup@example.com", "+1 555 0100", "90210", "123456789012345678", "+1 555 0100"],
+            ["李娜", "li.na@example.com", "021-6789", "01234", "MN-000555000555", "'=NOT_A_FORMULA"],
+        ]
+        if locale == "zh-CN":
+            edge = edge + [["王芳", "wang.fang@example.com", "0571-8888", "100000", "MN-000777000777", "+86 138 0000"]]
+        body = [row[:] for row in edge]
+        index = 0
+        while len(body) < count:
+            template = body[index % len(edge)][:]
+            template[1] = f"cycled{index:04d}@example.com"
+            body.append(template)
+            index += 1
+        return [headers] + body[:count]
+
+    for locale, suffix in (("en-US", ""), ("zh-CN", "-zh")):
+        for count, split in ((20, "regression"), (200, "calibration"), (500, "held_out")):
+            case(
+                f"w1-data-preservation-{count}{suffix}",
+                f"data-preservation-{count}{suffix}.xlsx",
+                preservation_rows(locale, count),
+                "data-preservation",
+                split,
+                locale,
+            )
 
     # --- Matrix completeness accounting (PRD §4: manifest counts missing cells) ---
     planned_matrix = {
@@ -250,6 +280,8 @@ def main() -> None:
             for family in ("layout", "data-preservation"):
                 if (family, locale, count) not in present and count != 0:
                     missing.append(f"{family}/{locale}/{count}rows")
+    # Enrich the planned list so it names the now-covered cells too.
+    planned_matrix["nowCovered"] = sorted(f"{f}/{l}/{r}" for f, l, r in present)
 
     manifest = {
         "version": 1,
