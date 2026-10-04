@@ -1,5 +1,11 @@
 # Computer Use plugin — incomplete requirements and known errors
 
+> **Historical document.** This was the 2026-09-29/10-02 audit trail; its
+> findings were fixed in the commits that followed. Current status lives in
+> [2026-10-03-implementation-TODO.md](2026-10-03-implementation-TODO.md)
+> (B01–B22 fixed 2026-10-04; M01–M09 open where hardware-gated). Kept as
+> history, not as status.
+
 > **2026-09-30 review update:** errors E-1 through E-10 plus the §2.2 `check`
 > conformance gap, the dangling upstream-lock `$schema`, and the wrong PRD
 > phase citations were fixed by the `/review` run that followed this audit
