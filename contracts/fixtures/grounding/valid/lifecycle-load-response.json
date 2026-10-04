@@ -1,0 +1,18 @@
+{
+  "contractVersion": 1,
+  "op": "load",
+  "loaded": true,
+  "identity": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "gui-actor-onnx",
+    "adapterVersion": "0.1.0",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1",
+    "executionProvider": "dml",
+    "onnxRuntimeVersion": "1.20.0"
+  },
+  "selectedProvider": "dml",
+  "loadMs": 1840.2,
+  "memoryEstimateBytes": 5368709120
+}

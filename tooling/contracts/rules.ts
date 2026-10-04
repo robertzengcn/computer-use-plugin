@@ -3,7 +3,14 @@
  * sibling-field comparison): candidate geometry must fit the declared image
  * dimensions, request crops must fit the declared capture (design §3.4.2).
  * Applied by the conformance runner as an additional gate.
+ *
+ * M01: the implemented rule set is the one DECLARED in
+ * contracts/rules/semantic-rules-v1.json — the document ships in the archive
+ * for consumers, and declaredRuleIds() + implementedRuleIds() keep code and
+ * document from drifting (asserted by contracts:check).
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export interface SemanticViolation {
   readonly rule: string;
@@ -76,4 +83,28 @@ export function checkGroundingRequest(instance: unknown): readonly SemanticViola
     ];
   }
   return [];
+}
+
+
+interface RulesDocument {
+  readonly version: number;
+  readonly rules: readonly { readonly id: string; readonly schema: string }[];
+}
+
+let cachedDeclared: readonly string[] | undefined;
+
+/** Rule ids declared by the published semantic-rules document (M01). */
+export function declaredRuleIds(contractsDir: string = join(process.cwd(), 'contracts')): readonly string[] {
+  if (cachedDeclared === undefined) {
+    const document = JSON.parse(
+      readFileSync(join(contractsDir, 'rules', 'semantic-rules-v1.json'), 'utf8'),
+    ) as RulesDocument;
+    cachedDeclared = document.rules.map((rule) => rule.id).sort();
+  }
+  return cachedDeclared;
+}
+
+/** Rule ids this module can actually enforce. */
+export function implementedRuleIds(): readonly string[] {
+  return ['candidate-point-within-image', 'candidate-region-within-image', 'request-crop-within-capture'].sort();
 }

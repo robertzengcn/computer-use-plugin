@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+  "title": "Grounding worker lifecycle operations",
+  "description": "Published serialization for the \u00a73.4.1 lifecycle: capabilities, load, ground, cancel, unload. Discriminated by 'op'; ground reuses the canonical request/result schemas. The executable registry/adapters stay host code (design \u00a73.4) \u2014 this document is the shared contract.",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/capabilitiesRequest"
+    },
+    {
+      "$ref": "#/$defs/loadRequest"
+    },
+    {
+      "$ref": "#/$defs/loadResponse"
+    },
+    {
+      "$ref": "#/$defs/groundRequest"
+    },
+    {
+      "$ref": "#/$defs/cancelRequest"
+    },
+    {
+      "$ref": "#/$defs/cancelResponse"
+    },
+    {
+      "$ref": "#/$defs/unloadRequest"
+    },
+    {
+      "$ref": "#/$defs/unloadResponse"
+    }
+  ],
+  "$defs": {
+    "configurationIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelConfigurationId",
+        "adapterId",
+        "adapterVersion",
+        "preprocessingRevision",
+        "decodingRevision",
+        "calibrationRevision"
+      ],
+      "properties": {
+        "modelConfigurationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "adapterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "adapterVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "preprocessingRevision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "decodingRevision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "calibrationRevision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "modelManifestSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "onnxRuntimeVersion": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "executionProvider": {
+          "type": "string",
+          "enum": [
+            "dml",
+            "coreml",
+            "cpu"
+          ]
+        }
+      }
+    },
+    "capabilitiesRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "adapterId"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "capabilities"
+        },
+        "adapterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "loadRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "sessionGeneration",
+        "identity"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "load"
+        },
+        "sessionGeneration": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "identity": {
+          "$ref": "#/$defs/configurationIdentity"
+        },
+        "providerPreference": {
+          "type": "string",
+          "enum": [
+            "dml",
+            "coreml",
+            "cpu"
+          ]
+        }
+      }
+    },
+    "loadResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "loaded",
+        "identity"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "load"
+        },
+        "loaded": {
+          "type": "boolean"
+        },
+        "identity": {
+          "$ref": "#/$defs/configurationIdentity"
+        },
+        "selectedProvider": {
+          "type": "string",
+          "enum": [
+            "dml",
+            "coreml",
+            "cpu"
+          ]
+        },
+        "loadMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "memoryEstimateBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failure": {
+          "$ref": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json#/$defs/typedFailure"
+        }
+      }
+    },
+    "groundRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "request"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "ground"
+        },
+        "request": {
+          "$ref": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json"
+        }
+      }
+    },
+    "cancelRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "requestId",
+        "sessionGeneration"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "cancel"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sessionGeneration": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "cancelResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "cancelled",
+        "suppressedResult"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "cancel"
+        },
+        "cancelled": {
+          "type": "boolean"
+        },
+        "suppressedResult": {
+          "type": "boolean",
+          "$comment": "True guarantees the named request's result is suppressed even if inference completed (\u00a73.4.1)."
+        }
+      }
+    },
+    "unloadRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "modelConfigurationId"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "unload"
+        },
+        "modelConfigurationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "unloadResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractVersion",
+        "op",
+        "released"
+      ],
+      "properties": {
+        "contractVersion": {
+          "const": 1
+        },
+        "op": {
+          "const": "unload"
+        },
+        "released": {
+          "type": "boolean",
+          "$comment": "Model sessions and buffers released; the host releases version leases only after unload/exit is confirmed."
+        }
+      }
+    }
+  },
+  "$comment": "Discriminated by 'op'; each oneOf branch enforces additionalProperties:false and its own required set."
+}

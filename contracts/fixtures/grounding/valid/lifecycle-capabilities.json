@@ -1,0 +1,5 @@
+{
+  "contractVersion": 1,
+  "op": "capabilities",
+  "adapterId": "gui-actor-onnx"
+}

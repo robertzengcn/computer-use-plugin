@@ -1,0 +1,6 @@
+{
+  "contractVersion": 1,
+  "op": "cancel",
+  "cancelled": true,
+  "suppressedResult": true
+}

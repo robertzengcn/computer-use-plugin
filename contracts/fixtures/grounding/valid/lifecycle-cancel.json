@@ -1,0 +1,6 @@
+{
+  "contractVersion": 1,
+  "op": "cancel",
+  "requestId": "req-0001",
+  "sessionGeneration": 3
+}

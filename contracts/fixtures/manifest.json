@@ -140,6 +140,24 @@
       "description": "capabilities-unknown-provider (invalid)"
     },
     {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/invalid/lifecycle-cancel-missing-request.json",
+      "expectation": "invalid",
+      "description": "cancel without requestId rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/invalid/lifecycle-load-missing-identity.json",
+      "expectation": "invalid",
+      "description": "load without identity rejected"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/invalid/lifecycle-unknown-op.json",
+      "expectation": "invalid",
+      "description": "unknown lifecycle op rejected"
+    },
+    {
       "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
       "file": "grounding/invalid/request-crop-out-of-bounds.json",
       "expectation": "invalid",
@@ -192,6 +210,48 @@
       "file": "grounding/valid/capabilities.json",
       "expectation": "valid",
       "description": "capabilities (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-cancel-response.json",
+      "expectation": "valid",
+      "description": "cancel response guarantees result suppression"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-cancel.json",
+      "expectation": "valid",
+      "description": "cancel request names requestId and session generation"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-capabilities.json",
+      "expectation": "valid",
+      "description": "capabilities probe by adapter id"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-load-response.json",
+      "expectation": "valid",
+      "description": "load response records effective provider, timing and memory"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-load.json",
+      "expectation": "valid",
+      "description": "load request carries the full immutable configuration identity"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-unload-response.json",
+      "expectation": "valid",
+      "description": "unload confirms release for lease expiry"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "file": "grounding/valid/lifecycle-unload.json",
+      "expectation": "valid",
+      "description": "unload targets the loaded configuration identity"
     },
     {
       "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",

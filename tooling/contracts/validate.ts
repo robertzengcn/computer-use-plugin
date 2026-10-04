@@ -7,7 +7,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadContractRegistry } from './registry.js';
-import { checkGroundingRequest, checkGroundingResult, type SemanticViolation } from './rules.js';
+import {
+  checkGroundingRequest,
+  checkGroundingResult,
+  declaredRuleIds,
+  implementedRuleIds,
+  type SemanticViolation,
+} from './rules.js';
 
 export interface FixtureManifestEntry {
   readonly schema: string;
@@ -50,6 +56,16 @@ export function runConformance(contractsDir: string): ConformanceReport {
   const registry = loadContractRegistry(contractsDir);
   const manifestPath = join(contractsDir, 'fixtures', 'manifest.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as FixtureManifestFile;
+
+  // M01: the published semantic-rules document and the implementation must
+  // declare the exact same rule set — drift in either direction fails.
+  const declared = declaredRuleIds(contractsDir);
+  const implemented = implementedRuleIds();
+  if (JSON.stringify(declared) !== JSON.stringify(implemented)) {
+    throw new Error(
+      `semantic-rules-v1.json drift: declared [${declared.join(', ')}] but implemented [${implemented.join(', ')}]`,
+    );
+  }
 
   const checked: ConformanceCheckedEntry[] = [];
   const failures: ConformanceFailure[] = [];

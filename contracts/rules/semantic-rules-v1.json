@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "Machine-readable declaration of the cross-field semantic rules that back the JSON Schemas but cannot be expressed in 2020-12 (no sibling-field comparison). Consumers receive this document in the contract archive; the producer conformance runner implements exactly these rule ids and fails if the set drifts (single source of truth, M01).",
+  "rules": [
+    {
+      "id": "candidate-point-within-image",
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "fields": ["candidates[].geometry.point.x", "candidates[].geometry.point.y", "candidates[].imageDimensions.widthPx", "candidates[].imageDimensions.heightPx"],
+      "constraint": "0 <= point.x <= imageDimensions.widthPx AND 0 <= point.y <= imageDimensions.heightPx, per candidate, in the candidate's declared coordinateSpace"
+    },
+    {
+      "id": "candidate-region-within-image",
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/result-v1.json",
+      "fields": ["candidates[].geometry.region", "candidates[].imageDimensions.widthPx", "candidates[].imageDimensions.heightPx"],
+      "constraint": "region.x >= 0 AND region.y >= 0 AND region.x + region.w <= widthPx AND region.y + region.h <= heightPx, per candidate"
+    },
+    {
+      "id": "request-crop-within-capture",
+      "schema": "https://aifetchly.dev/schemas/computer-use/grounding/request-v1.json",
+      "fields": ["image.crop", "image.widthPx", "image.heightPx"],
+      "constraint": "crop.x >= 0 AND crop.y >= 0 AND crop.x + crop.w <= widthPx AND crop.y + crop.h <= heightPx"
+    }
+  ]
+}

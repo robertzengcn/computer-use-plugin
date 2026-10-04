@@ -57,6 +57,10 @@
     {
       "$id": "https://aifetchly.dev/schemas/computer-use/adapters/upstream-lock-v1.json",
       "path": "adapters/upstream-lock-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
+      "path": "grounding/lifecycle-v1.schema.json"
     }
   ]
 }
