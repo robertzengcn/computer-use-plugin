@@ -31,9 +31,15 @@ export interface EvalCaseOutcome {
 export interface ReportCaseRecord {
   readonly caseId: string;
   readonly split: string;
+  readonly consentClass?: string;
   readonly fixtureHash: string;
   readonly expected: string;
   readonly actual: string;
+  // E15: structured geometry alongside display strings — original capture
+  // pixels, coordinate space and transforms are explicit, not string-only.
+  readonly expectedRegion?: { readonly x: number; readonly y: number; readonly w: number; readonly h: number } | null;
+  readonly actualPoints?: readonly { readonly x: number; readonly y: number }[];
+  readonly coordinateSpace?: string;
   readonly regionHit: boolean | null;
   readonly status: CaseStatus;
   readonly reason: string;
@@ -61,6 +67,15 @@ export interface EvaluationReport {
     readonly runnerLabel: string;
     readonly startedAt?: string;
     readonly finishedAt?: string;
+    // E15: complete provenance — run ID, source commit, fixture-manifest hash,
+    // tool versions and explicit unavailable measurements. All required for
+    // reproducible reports; missing hardware/metrics stay explicit, never silent.
+    readonly runId?: string;
+    readonly sourceCommit?: string;
+    readonly datasetManifestSha256?: string;
+    readonly toolVersions?: Readonly<Record<string, string>>;
+    readonly memoryMb?: number | null;
+    readonly measurementMethod?: string;
   };
   readonly configuration: RunnerConfiguration;
   readonly cases: readonly ReportCaseRecord[];
@@ -86,6 +101,12 @@ export function evaluateCases(
     runnerKind: string;
     startedAt?: string;
     finishedAt?: string;
+    runId?: string;
+    sourceCommit?: string;
+    datasetManifestSha256?: string;
+    toolVersions?: Readonly<Record<string, string>>;
+    memoryMb?: number | null;
+    measurementMethod?: string;
   },
   configuration: RunnerConfiguration,
   accounting?: { readonly extraRecords?: number },
@@ -93,18 +114,26 @@ export function evaluateCases(
   const outcomeByCase = new Map(outcomes.map((outcome) => [outcome.caseId, outcome] as const));
   const caseRecords: ReportCaseRecord[] = inputs.map((input) => {
     const outcome = outcomeByCase.get(input.caseId);
-    if (input.contentSha256 === undefined) {
-      // B17: a case without a content hash has no verifiable identity and
-      // can never silently count as identical evidence.
+    // E15: missing OR malformed hashes have no verifiable identity and can
+    // never silently count as identical evidence. Reviewed evidence keeps its
+    // provenance (consentClass preserved); missing provenance is explicit.
+    if (input.contentSha256 === undefined || !/^[0-9a-f]{64}$/i.test(input.contentSha256)) {
       return {
         caseId: input.caseId,
         split: input.split,
+        consentClass: input.consentClass,
         fixtureHash: 'missing',
         expected: input.expected.kind,
         actual: 'no-result',
+        expectedRegion: null,
+        actualPoints: [],
+        coordinateSpace: 'capture-pixels',
         regionHit: null,
         status: 'skipped' as CaseStatus,
-        reason: 'case has no contentSha256; fixture identity is unverifiable',
+        reason:
+          input.contentSha256 === undefined
+            ? 'case has no contentSha256; fixture identity is unverifiable'
+            : `case has malformed contentSha256 ${JSON.stringify(input.contentSha256)}; fixture identity is unverifiable`,
         inferenceMs: 0,
       };
     }
@@ -112,9 +141,13 @@ export function evaluateCases(
       return {
         caseId: input.caseId,
         split: input.split,
+        consentClass: input.consentClass,
         fixtureHash: input.contentSha256,
         expected: input.expected.kind,
         actual: 'no-result',
+        expectedRegion: input.expected.region ?? null,
+        actualPoints: [],
+        coordinateSpace: 'capture-pixels',
         regionHit: null,
         status: 'skipped' as CaseStatus,
         reason: 'required case produced no result; skipped is not a pass',
@@ -126,9 +159,13 @@ export function evaluateCases(
       return {
         caseId: input.caseId,
         split: input.split,
+        consentClass: input.consentClass,
         fixtureHash: input.contentSha256 ?? 'unversioned',
         expected: `region ${JSON.stringify(input.expected.region)}`,
         actual: `candidates ${JSON.stringify(outcome.candidates)}`,
+        expectedRegion: input.expected.region,
+        actualPoints: outcome.candidates,
+        coordinateSpace: 'capture-pixels',
         regionHit: hit,
         status: hit ? ('pass' as CaseStatus) : ('fail' as CaseStatus),
         reason: hit ? 'candidate inside labeled region' : 'no candidate inside labeled region',
@@ -140,9 +177,13 @@ export function evaluateCases(
       return {
         caseId: input.caseId,
         split: input.split,
+        consentClass: input.consentClass,
         fixtureHash: input.contentSha256 ?? 'missing',
         expected: 'absent',
         actual: `${outcome.candidates.length} candidate(s)`,
+        expectedRegion: null,
+        actualPoints: outcome.candidates,
+        coordinateSpace: 'capture-pixels',
         regionHit: null,
         status: falseAccept ? ('fail' as CaseStatus) : ('pass' as CaseStatus),
         reason: falseAccept
@@ -154,9 +195,13 @@ export function evaluateCases(
     return {
       caseId: input.caseId,
       split: input.split,
+      consentClass: input.consentClass,
       fixtureHash: input.contentSha256 ?? 'missing',
       expected: 'ambiguous',
       actual: `${outcome.candidates.length} candidate(s)`,
+      expectedRegion: null,
+      actualPoints: outcome.candidates,
+      coordinateSpace: 'capture-pixels',
       regionHit: null,
       status: outcome.candidates.length === 0 ? ('pass' as CaseStatus) : ('fail' as CaseStatus),
       reason:

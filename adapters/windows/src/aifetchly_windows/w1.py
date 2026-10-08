@@ -12,6 +12,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .normalize import AxElement
+from .normalize import NormalizedAxTree as NAT
+
 MAX_ROWS = 1000
 MAX_COLUMNS = 64
 MAX_TABS = 64
@@ -47,6 +50,12 @@ class W1Observation:
     elementCount: int = 0
     truncated: bool = False
     notes: tuple[str, ...] = field(default=())
+    # E12: explicit provenance so scrolled views cannot masquerade as verified
+    # grid metadata. 'authoritative' means the tree carried verified grid
+    # metadata; 'observed' means derived from visible cells; 'unavailable'
+    # means no grid was observed.
+    headerProvenance: str = "unavailable"
+    rangeProvenance: str = "unavailable"
 
 
 MAX_WALK_ELEMENTS = 50_000
@@ -59,6 +68,10 @@ def _walk(node: dict[str, object]) -> list[dict[str, object]]:
     elements: list[dict[str, object]] = []
     stack: list[tuple[dict[str, object], int]] = [(node, 0)]
     while stack:
+        # E12: bound total allocation before expanding. A very wide node must
+        # not queue unbounded children before the element limit can stop it.
+        if len(elements) + len(stack) >= MAX_WALK_ELEMENTS:
+            raise W1ObservationError(f"AX tree exceeds the {MAX_WALK_ELEMENTS}-element observation bound")
         current, depth = stack.pop()
         if not isinstance(current, dict):
             raise W1ObservationError("AX node must be an object")
@@ -69,6 +82,16 @@ def _walk(node: dict[str, object]) -> list[dict[str, object]]:
             raise W1ObservationError(f"AX tree exceeds the {MAX_WALK_ELEMENTS}-element observation bound")
         children = current.get("children")
         if isinstance(children, list):
+            # E12: per-node fan-out bound prevents a single malicious/buggy
+            # node from allocating unbounded memory in one step.
+            if len(children) > MAX_WALK_ELEMENTS:
+                raise W1ObservationError(
+                    f"AX node has {len(children)} children, exceeding the {MAX_WALK_ELEMENTS}-element bound"
+                )
+            if len(elements) + len(stack) + len(children) > MAX_WALK_ELEMENTS:
+                raise W1ObservationError(
+                    f"AX tree exceeds the {MAX_WALK_ELEMENTS}-element observation bound"
+                )
             for child in children:
                 if not isinstance(child, dict):
                     raise W1ObservationError("AX child node must be an object")
@@ -77,6 +100,11 @@ def _walk(node: dict[str, object]) -> list[dict[str, object]]:
                 reversed([(child, depth + 1) for child in children if isinstance(child, dict)])
             )
     return elements
+
+
+def _is_int_coordinate(value: object) -> bool:
+    """E12: booleans are not valid coordinates (bool subclasses int)."""
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def extract_w1_observation(root: dict[str, object]) -> W1Observation:
@@ -99,8 +127,9 @@ def extract_w1_observation(root: dict[str, object]) -> W1Observation:
         if role == "cell":
             row = element.get("row")
             column = element.get("column")
-            if not isinstance(row, int) or not isinstance(column, int):
+            if not _is_int_coordinate(row) or not _is_int_coordinate(column):
                 raise W1ObservationError("cell without integer row/column coordinates")
+            assert isinstance(row, int) and isinstance(column, int)
             if row < 0 or column < 0:
                 raise W1ObservationError(f"negative cell coordinate ({row}, {column})")
             if row >= MAX_ROWS or column >= MAX_COLUMNS:
@@ -139,34 +168,59 @@ def extract_w1_observation(root: dict[str, object]) -> W1Observation:
             elementCount=len(elements),
             truncated=truncated,
             notes=tuple(notes) + ("no spreadsheet grid observed (empty or protected view)",),
+            headerProvenance="unavailable",
+            rangeProvenance="unavailable",
         )
 
     cells.sort(key=lambda cell: (cell.row, cell.column))
     max_row = max(cell.row for cell in cells)
     max_column = max(cell.column for cell in cells)
     first_row = min(cell.row for cell in cells)
-    # B12: header and used range are distinguished as OBSERVED facts unless
+    # B12/E12: header and used range are distinguished as OBSERVED facts unless
     # the tree carries authoritative grid metadata; a scrolled view must not
-    # masquerade as a verified header/used range.
-    authoritative_range = root.get("usedRange") if isinstance(root.get("usedRange"), list) else None
-    authoritative_header = root.get("headerRow") if isinstance(root.get("headerRow"), list) else None
+    # masquerade as a verified header/used range. Provenance is explicit, not
+    # free-text only.
+    authoritative_range_raw = root.get("usedRange")
+    authoritative_header_raw = root.get("headerRow")
+    authoritative_range: list[object] | None = (
+        authoritative_range_raw if isinstance(authoritative_range_raw, list) else None
+    )
+    authoritative_header: list[object] | None = (
+        authoritative_header_raw if isinstance(authoritative_header_raw, list) else None
+    )
+    if authoritative_range is not None:
+        if len(authoritative_range) != 2 or not all(_is_int_coordinate(v) for v in authoritative_range):
+            raise W1ObservationError("authoritative usedRange must be [rows, columns] integers")
+        assert isinstance(authoritative_range[0], int) and isinstance(authoritative_range[1], int)
+        rows, cols = authoritative_range[0], authoritative_range[1]
+        if rows <= 0 or cols <= 0 or rows > MAX_ROWS or cols > MAX_COLUMNS:
+            raise W1ObservationError(f"authoritative usedRange out of bounds: [{rows}, {cols}]")
+    if authoritative_header is not None:
+        for entry in authoritative_header:
+            if entry is not None and not isinstance(entry, str):
+                raise W1ObservationError("authoritative headerRow entries must be strings or null")
+        if len(authoritative_header) > MAX_COLUMNS:
+            raise W1ObservationError("authoritative headerRow exceeds column bound")
     header_cells = [cell for cell in cells if cell.row == first_row]
-    header_row = (
-        tuple(name if isinstance(name, str) else None for name in authoritative_header)
-        if authoritative_header is not None
-        else tuple(
+    if authoritative_header is not None:
+        header_row = tuple(entry if isinstance(entry, str) else None for entry in authoritative_header)
+        header_provenance = "authoritative"
+    else:
+        header_row = tuple(
             next((cell.name for cell in header_cells if cell.column == index), None)
             for index in range(max_column + 1)
         )
-    )
-    if authoritative_header is None:
+        header_provenance = "observed"
         notes.append(
             "header inferred from the first observed row; a scrolled view can mislabel it"
         )
-    if authoritative_range is not None and len(authoritative_range) == 2:
-        used_range = (int(authoritative_range[0]), int(authoritative_range[1]))
+    if authoritative_range is not None:
+        assert isinstance(authoritative_range[0], int) and isinstance(authoritative_range[1], int)
+        used_range = (authoritative_range[0], authoritative_range[1])
+        range_provenance = "authoritative"
     else:
         used_range = (max_row - first_row + 1, max_column + 1)
+        range_provenance = "observed"
         notes.append("used range derived from observed extents, not verified grid metadata")
     focused = [cell for cell in cells if cell.focused]
     if len(focused) > 1:
@@ -184,4 +238,64 @@ def extract_w1_observation(root: dict[str, object]) -> W1Observation:
         elementCount=len(elements),
         truncated=truncated,
         notes=tuple(notes),
+        headerProvenance=header_provenance,
+        rangeProvenance=range_provenance,
     )
+
+
+def extract_w1_from_normalized(tree: object) -> W1Observation:
+    """E11: run a nontrivial normalized AX tree through W-1 extraction.
+
+    Accepts a ``NormalizedAxTree`` (or its ``dataclasses.asdict`` form with
+    ``elements`` list) and returns the W-1 observation, preserving hierarchy,
+    headers, values, focus and selection. This is the tested composition path:
+    normalize -> indexed tree -> nested dicts -> W-1.
+    """
+    from .normalize import normalized_to_dict_tree
+
+    if isinstance(tree, NAT):
+        nested = normalized_to_dict_tree(tree)
+        # Preserve authoritative grid metadata if the original root carried it:
+        # normalized elements drop unknown keys, so callers needing verified
+        # ranges must pass them via the nested root explicitly.
+        return extract_w1_observation(nested)
+    if isinstance(tree, dict):
+        # dataclasses.asdict(NormalizedAxTree) form: elements carry indexed
+        # children; rebuild the nested root from index 0.
+        elements_raw = tree.get("elements")
+        if isinstance(elements_raw, list) and elements_raw:
+            rebuilt: list[AxElement] = []
+            for el in elements_raw:
+                if not isinstance(el, dict):
+                    raise W1ObservationError("normalized elements must be objects")
+                role = el.get("role")
+                if not isinstance(role, str):
+                    raise W1ObservationError("normalized element missing role")
+                children_raw = el.get("children", ())
+                children: tuple[int, ...] = ()
+                if isinstance(children_raw, (list, tuple)):
+                    validated: list[int] = []
+                    for c in children_raw:
+                        if not isinstance(c, int) or isinstance(c, bool):
+                            raise W1ObservationError(f"invalid child reference {c!r}")
+                        validated.append(c)
+                    children = tuple(validated)
+                row = el.get("row")
+                col = el.get("column")
+                rebuilt.append(
+                    AxElement(
+                        role=role,
+                        name=el.get("name") if isinstance(el.get("name"), str) else None,
+                        value=el.get("value") if isinstance(el.get("value"), str) else None,
+                        frame=None,
+                        children=children,
+                        row=row if isinstance(row, int) and not isinstance(row, bool) else None,
+                        column=col if isinstance(col, int) and not isinstance(col, bool) else None,
+                        selected=el.get("selected") is True,
+                        focused=el.get("focused") is True,
+                    )
+                )
+            nat = NAT(elements=tuple(rebuilt), element_count=len(rebuilt), truncated=bool(tree.get("truncated", False)))
+            nested = normalized_to_dict_tree(nat)
+            return extract_w1_observation(nested)
+    raise W1ObservationError("extract_w1_from_normalized requires a NormalizedAxTree")

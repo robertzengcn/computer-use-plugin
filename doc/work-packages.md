@@ -1,5 +1,18 @@
 # Implementation work packages (design §9.1, CU-PLUGIN-22)
 
+> 2026-10-06 scope note (E18): the portable rows below were labeled COMPLETE
+> before the [PRD audit](2026-10-06-prd-audit-TODO.md) found portable defects
+> E01–E18. Those defects are fixed in this checkout (archive closure, package
+> hashing, release binding, replay identity, AX/W-1 bounds, subprocess bounds,
+> manifest identities, eval provenance, public observe state, CI triggers).
+> Remaining work is split into portable-done vs hardware/consumer-gated
+> (M01–M10): Windows backend provisioning/launch (M02/M03), reference/export/
+> parity/providers (M04/M05), fixtures/harness/native CI (M06/M08), Mac helper
+> selection/build/signing (M07), delivery/upgrade (M09) and toolchain pins
+> (M10). `model:prepare` verifies the approved cache and never downloads;
+> fetching weights is always the maintainer's explicit action (design §6.6).
+> The [Oct 3 TODO](2026-10-03-implementation-TODO.md) banner is history.
+
 Every package names its owned paths, prerequisite pins, the exact commands a
 maintainer runs, its outputs and a completion criterion checked against an
 immutable candidate — never file presence. Handoffs record the exact artifact
@@ -9,7 +22,7 @@ Common setup (all packages): `npm ci` (Node 22 LTS via `.node-version`);
 Python packages additionally need `uv` — each syncs its own locked env with
 `uv sync --locked` run inside its directory (`adapters/windows/`, `grounding/`).
 
-## Portable foundation — COMPLETE
+## Portable foundation — DONE (E01–E18 fixed, M-handoffs open)
 
 | Package | Status | Verification commands (run from repo root) |
 | --- | --- | --- |

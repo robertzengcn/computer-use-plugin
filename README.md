@@ -10,21 +10,32 @@ need no developer tools.
 - Technical design: [`doc/computer-use-plugin-technical-design.md`](doc/computer-use-plugin-technical-design.md)
 - Implementation plan (Phase 0): [`doc/plans/2026-09-27-phase0-foundation.md`](doc/plans/2026-09-27-phase0-foundation.md)
 
-## Current status (Phase 0)
+## Current status (Phase 0 + portable E-fixes, 2026-10-06)
+
+Portable verification: `npm run check` green (154 Vitest tests, 15 schemas,
+41 valid + 33 invalid fixtures). Windows: 81 passed + 2 skipped (native cases
+are stubs, not qualification). Grounding: 72 passed. See
+[`doc/2026-10-06-prd-audit-TODO.md`](doc/2026-10-06-prd-audit-TODO.md) for the
+current PRD audit (E01–E18 portable defects fixed in this checkout; M01–M10
+require hardware/consumers) and
+[`doc/2026-10-03-implementation-TODO.md`](doc/2026-10-03-implementation-TODO.md)
+as history (its Oct 4 completion banner is superseded — portable work remained).
 
 | Area | Status |
 | --- | --- |
 | TypeScript toolchain + §2.2 command contract | ✅ implemented, `npm run check` green |
-| Contracts: 12 schemas + 47 conformance fixtures + transforms + generated types | ✅ `npm run contracts:check` / `contracts:build` |
-| Offline evaluation CLI (replay/compare/report) | ✅ `npm run eval -- replay …` (no backend, no input) |
-| Release verifier (closure/hash/platform/licence/evidence) | ✅ `npm run release:verify -- --manifest …` |
-| Windows backend integration package | scaffold + 35 unit tests; native pin is P0-C |
-| Grounding model engineering package | decode/shard/manifest/parity cores + 28 tests; weights/export are P0-D |
-| macOS backend | lock + allowlist scaffolds; decision is P0-E |
-| Native qualification, model export, signing | **not claimed** — requires the pinned environments and host integration evidence |
+| Contracts: 15 schemas + 74 conformance fixtures (41 valid, 33 invalid) + transforms + generated types + complete archive closure (E01/E02) | ✅ `npm run contracts:check` / `contracts:build` (extracted archive validates independently) |
+| Offline evaluation CLI (replay/compare/report with full identity + provenance, E09/E15) | ✅ `npm run eval -- replay …` (no backend, no input); `compare` saves JSON/HTML via `--out` |
+| Release verifier (closure/hash/platform/licence/evidence + mandatory suites/binding, E04–E08) | ✅ `npm run release:verify -- --manifest …` (candidate vs qualified states preserved) |
+| Windows backend integration package (E03/E10/E11/E12: hashed src closure, full lock validation, AX/W-1 bounds) | Portable units + packaging guards; native pin/provisioning/launch is P0-C/M02 (unpinned) |
+| Grounding model engineering package (E14: explicit processing identities; 72 tests) | Manifest/parity cores; weights/export/parity/provider qualification are P0-D/M04 (unfetched) |
+| macOS backend | lock + allowlist scaffolds; Ghost-vs-Swift decision and helper build/signing are P0-E/M07 (no Swift source) |
+| Native qualification, model export, signing, host/Hub integration | **not claimed** — requires pinned environments, hardware runners and consumer evidence (M02–M09) |
 
 Platform-bound commands fail closed with exit `3` (missing prerequisites) —
-never a silent pass (PRD §6.1).
+never a silent pass (PRD §6.1). `model:prepare` verifies the approved cache
+against `models.lock.json` and never downloads; fetching weights is the
+maintainer's explicit action (design §6.6).
 
 ## Developer workflows (design §2.5)
 

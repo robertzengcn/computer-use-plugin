@@ -69,11 +69,14 @@ def normalize_ax_tree(
     elements: list[AxElement] = []
     truncated = False
 
-    def visit(node: Any, depth: int) -> int:
+    def visit(node: Any, depth: int) -> int | None:
         nonlocal truncated
-        if len(elements) >= max_elements or depth > max_depth:
+        if depth > max_depth:
             truncated = True
-            return -1
+            return None
+        if len(elements) >= max_elements:
+            truncated = True
+            return None
         if not isinstance(node, Mapping):
             raise NormalizationError("AX node must be an object")
         role = node.get("role")
@@ -81,13 +84,16 @@ def normalize_ax_tree(
             raise NormalizationError("AX node missing role")
         frame_raw = node.get("frame")
         row_raw, column_raw = node.get("row"), node.get("column")
+        # E11/E12: booleans are not valid grid coordinates (bool subclasses int).
+        row = row_raw if isinstance(row_raw, int) and not isinstance(row_raw, bool) else None
+        column = column_raw if isinstance(column_raw, int) and not isinstance(column_raw, bool) else None
         element = AxElement(
             role=role,
             name=node.get("name") if isinstance(node.get("name"), str) else None,
             value=node.get("value") if isinstance(node.get("value"), str) else None,
             frame=_parse_frame(frame_raw) if frame_raw is not None else None,
-            row=row_raw if isinstance(row_raw, int) else None,
-            column=column_raw if isinstance(column_raw, int) else None,
+            row=row,
+            column=column,
             selected=node.get("selected") is True,
             focused=node.get("focused") is True,
         )
@@ -97,9 +103,17 @@ def normalize_ax_tree(
         if isinstance(children_raw, list):
             child_indices: list[int] = []
             for child in children_raw:
+                # E11: stop sibling work once the output bound is reached so
+                # traversal work/allocation stops at limits.
+                if len(elements) >= max_elements:
+                    truncated = True
+                    break
                 if not isinstance(child, Mapping):
                     raise NormalizationError("AX child node must be an object")
-                child_indices.append(visit(child, depth + 1))
+                child_index = visit(child, depth + 1)
+                # Omit truncated references: only in-range integers survive.
+                if child_index is not None:
+                    child_indices.append(child_index)
             # Preserve the hierarchy so downstream consumers (w1) can walk
             # relationships instead of a flat soup (B11).
             elements[index] = AxElement(
@@ -113,6 +127,7 @@ def normalize_ax_tree(
                 selected=element.selected,
                 focused=element.focused,
             )
+        return index
 
     visit(raw_root, 0)
 
@@ -127,3 +142,50 @@ def normalize_ax_tree(
         truncated=truncated,
         index_by_role=by_role,
     )
+
+
+def normalized_to_dict_tree(tree: NormalizedAxTree, root_index: int = 0) -> dict[str, object]:
+    """E11: real normalized-tree-to-W-1 interface.
+
+    Expand the flat indexed representation back into the nested-dict shape
+    ``w1.extract_w1_observation`` consumes, preserving hierarchy, headers,
+    values, focus and selection. Child indices are validated in-range;
+    ``None``/out-of-range references can never survive normalization after
+    the E11 fix, but this asserts the invariant at the boundary.
+    """
+    if root_index < 0 or root_index >= len(tree.elements):
+        raise NormalizationError(f"root index {root_index} out of range")
+    memo: dict[int, dict[str, object]] = {}
+
+    def expand(index: int) -> dict[str, object]:
+        if index in memo:
+            return memo[index]
+        if index < 0 or index >= len(tree.elements):
+            raise NormalizationError(f"child index {index} out of range")
+        element = tree.elements[index]
+        node: dict[str, object] = {"role": element.role}
+        if element.name is not None:
+            node["name"] = element.name
+        if element.value is not None:
+            node["value"] = element.value
+        if element.row is not None:
+            node["row"] = element.row
+        if element.column is not None:
+            node["column"] = element.column
+        if element.selected:
+            node["selected"] = True
+        if element.focused:
+            node["focused"] = True
+        children: list[dict[str, object]] = []
+        for child_index in element.children:
+            if not isinstance(child_index, int) or isinstance(child_index, bool):
+                raise NormalizationError(f"invalid child reference {child_index!r}")
+            if child_index < 0 or child_index >= len(tree.elements):
+                raise NormalizationError(f"child index {child_index} out of range")
+            children.append(expand(child_index))
+        if children:
+            node["children"] = children
+        memo[index] = node
+        return node
+
+    return expand(root_index)

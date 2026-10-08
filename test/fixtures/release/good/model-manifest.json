@@ -84,9 +84,9 @@
     }
   ],
   "parityReport": {
-    "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
-    "fixtureCount": 12,
-    "status": "passed"
+    "sha256": "dcca73ee5fc191dbee48c0efb7ea62a1b17f2291fbc49f64ba72c4d6ec8f5059",
+    "fixtureCount": 1,
+    "status": "candidate"
   },
   "healthFixture": {
     "imagePath": "health/fixture.png",

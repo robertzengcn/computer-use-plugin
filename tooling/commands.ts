@@ -4,7 +4,7 @@
  * until the Phase 0 spikes pin their native environments; they never pretend
  * an unavailable environment is compatible (PRD §6.1).
  */
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { CommandResult, CommandSpec, ParsedArgs } from './cli.js';
 import { buildContractArchive } from './contracts/archive.js';
 import { checkDeclarationDrift } from './contracts/generate-types.js';
@@ -157,7 +157,7 @@ export const COMMANDS: readonly CommandSpec[] = [
         return { outcome: 'invalidArgs', message: 'release:verify requires --manifest <path>' };
       }
       try {
-        const report = await verifyRelease(join(ctx.cwd, manifest));
+        const report = await verifyRelease(resolve(ctx.cwd, manifest));
         return {
           outcome: report.failures.length === 0 ? 'ok' : 'failed',
           message: formatVerification(report),

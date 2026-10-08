@@ -11,7 +11,9 @@
     "sha256": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11"
   },
   "requiredEvidence": [
-    "parity"
+    "parity",
+    "windows-native",
+    "mac-native"
   ],
   "artifacts": [
     {
@@ -60,8 +62,8 @@
     {
       "role": "model",
       "location": "model-manifest.json",
-      "bytes": 2319,
-      "sha256": "d4c93bec901fb8ef04cfc895efa88c9e376c94e03916057b4720b5adbc432565",
+      "bytes": 2321,
+      "sha256": "9021dcfbe11e427608fd7239e219742244d4d4f9b4fa6d4bc2d9cbed9038bef2",
       "modelManifestPath": "model-manifest.json",
       "compatibleWith": {
         "runtimeId": "grounding-model-gui-actor-2b-fp16"
@@ -75,6 +77,22 @@
       "sha256": "dcca73ee5fc191dbee48c0efb7ea62a1b17f2291fbc49f64ba72c4d6ec8f5059",
       "suite": "parity",
       "reportPath": "report-parity.json"
+    },
+    {
+      "role": "evidence",
+      "location": "report-windows-native.json",
+      "bytes": 1195,
+      "sha256": "859829cb3535e0fbc6985cba7e47b3bf7279b8489523273d0e46358fb13933bd",
+      "suite": "windows-native",
+      "reportPath": "report-windows-native.json"
+    },
+    {
+      "role": "evidence",
+      "location": "report-mac-native.json",
+      "bytes": 1198,
+      "sha256": "19888fdbd19f818422daa0c5f92e8d708708ace39f745ef72a6312ee022b2f2f",
+      "suite": "mac-native",
+      "reportPath": "report-mac-native.json"
     }
   ]
 }

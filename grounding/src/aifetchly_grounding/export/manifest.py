@@ -59,6 +59,18 @@ class ManifestInputs:
     execution_providers: tuple[str, ...]
     health_image_path: str
     health_expected_path: str
+    # E14: explicit validated processing/architecture identities. Defaults
+    # preserve the current production configuration; revised calibration or
+    # decoder revisions must produce distinct schema-valid identities instead
+    # of silently defaulting or leaking into preprocessing params.
+    adapter_id: str = "gui-actor-onnx"
+    architecture: str = "gui-actor-2b-qwen2-vl"
+    grounding_contract_version: int = 1
+    manifest_version: int = 1
+    preprocessing_revision: str = "prep-v1"
+    decoding_revision: str = "dec-v1"
+    calibration_revision: str = "cal-v1"
+    pipeline_version: str = "export-v1"
 
 
 def check_licences(inputs: ManifestInputs) -> None:
@@ -80,6 +92,29 @@ def build_manifest(inputs: ManifestInputs) -> dict[str, object]:
         if len(entry.sha256) != 64 or any(c not in "0123456789abcdef" for c in entry.sha256):
             raise ManifestError(f"{entry.path}: sha256 must be 64 lowercase hex characters")
     check_licences(inputs)
+    # E14: processing identity lives in explicit revision inputs, never inside
+    # the preprocessing parameter dict. A revision smuggled via preprocessing
+    # would produce an invalid manifest (additional property) — fail fast with
+    # a typed error instead of emitting invalid bytes.
+    for leaked in ("preprocessingRevision", "decodingRevision", "calibrationRevision"):
+        if leaked in inputs.preprocessing:
+            raise ManifestError(
+                f"preprocessing must not contain {leaked!r}: pass it as an explicit revision input"
+            )
+    for label, value in (
+        ("adapter_id", inputs.adapter_id),
+        ("architecture", inputs.architecture),
+        ("preprocessing_revision", inputs.preprocessing_revision),
+        ("decoding_revision", inputs.decoding_revision),
+        ("calibration_revision", inputs.calibration_revision),
+        ("pipeline_version", inputs.pipeline_version),
+    ):
+        if not isinstance(value, str) or not value:
+            raise ManifestError(f"missing identity: {label}")
+        if len(value) > 128:
+            raise ManifestError(f"identity {label} exceeds 128 characters")
+    if inputs.grounding_contract_version < 1 or inputs.manifest_version < 1:
+        raise ManifestError("contract/manifest versions must be >= 1")
 
     return {
         "packageKind": "grounding-model",
@@ -92,21 +127,21 @@ def build_manifest(inputs: ManifestInputs) -> dict[str, object]:
             "baseModel": {"modelId": inputs.base_model_id, "licence": inputs.base_model_licence},
         },
         "identity": {
-            "groundingContractVersion": 1,
-            "adapterId": "gui-actor-onnx",
-            "architecture": "gui-actor-2b-qwen2-vl",
-            "manifestVersion": 1,
-            "preprocessingRevision": str(inputs.preprocessing.get("preprocessingRevision", "prep-v1")),
-            "decodingRevision": "dec-v1",
-            "calibrationRevision": "cal-v1",
+            "groundingContractVersion": inputs.grounding_contract_version,
+            "adapterId": inputs.adapter_id,
+            "architecture": inputs.architecture,
+            "manifestVersion": inputs.manifest_version,
+            "preprocessingRevision": inputs.preprocessing_revision,
+            "decodingRevision": inputs.decoding_revision,
+            "calibrationRevision": inputs.calibration_revision,
         },
         "export": {
-            "pipelineVersion": "export-v1",
+            "pipelineVersion": inputs.pipeline_version,
             "exporter": inputs.exporter,
             "opset": inputs.opset,
             "quantization": inputs.quantization,
         },
-        "preprocessing": inputs.preprocessing,
+        "preprocessing": dict(inputs.preprocessing),
         "graphs": [
             {"name": graph.name, "inputs": list(graph.inputs), "outputs": list(graph.outputs)}
             for graph in inputs.graphs

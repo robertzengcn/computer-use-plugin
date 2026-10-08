@@ -3,9 +3,9 @@ name: portable-checks
 on:
   push:
     branches: [main]
-    paths: ['tooling/**', 'contracts/**', 'eval/**', 'test/**', 'plugin/**', 'package.json', 'package-lock.json', 'tsconfig.json', 'eslint.config.js', 'vitest.config.ts', '.github/workflows/portable-checks.yml']
+    paths: ['tooling/**', 'contracts/**', 'eval/**', 'test/**', 'plugin/**', 'package.json', 'package-lock.json', 'tsconfig.json', 'eslint.config.js', 'vitest.config.ts', '.node-version', '.npmrc', '.github/workflows/portable-checks.yml']
   pull_request:
-    paths: ['tooling/**', 'contracts/**', 'eval/**', 'test/**', 'plugin/**', 'package.json', 'package-lock.json', 'tsconfig.json', 'eslint.config.js', 'vitest.config.ts', '.github/workflows/portable-checks.yml']
+    paths: ['tooling/**', 'contracts/**', 'eval/**', 'test/**', 'plugin/**', 'package.json', 'package-lock.json', 'tsconfig.json', 'eslint.config.js', 'vitest.config.ts', '.node-version', '.npmrc', '.github/workflows/portable-checks.yml']
 
 jobs:
   node:
@@ -25,3 +25,26 @@ jobs:
       - run: npm run build
       - run: npm run contracts:check
       - run: node dist/eval/cli.js replay --bundle test/fixtures/trace-bundle --runner recorded --dataset w1-smoke
+      # E17: test the extracted contract artifact in portable CI — catches
+      # E01 (incomplete registry) and E02 (stale-file contamination).
+      - run: npm run contracts:build
+      - name: Validate extracted contract archive independently of the checkout
+        run: >
+          node --input-type=module -e "
+          import { loadContractRegistry } from './dist/tooling/contracts/registry.js';
+          import { readFileSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+          const dir = readdirSync('out').find((d) => d.startsWith('contracts-v'));
+          if (!dir) { console.error('no contracts archive dir in out/'); process.exit(1); }
+          const archiveDir = join('out', dir);
+          const registry = loadContractRegistry(archiveDir);
+          for (const id of registry.ids()) { registry.compile(id); }
+          const manifest = JSON.parse(readFileSync(join(archiveDir, 'manifest.json'), 'utf8'));
+          const files = new Set(manifest.files.map((f) => f.path));
+          for (const id of registry.ids()) {
+            const p = registry.pathFor(id);
+            if (!files.has(p)) { console.error('registry path missing from archive closure:', p); process.exit(1); }
+          }
+          if (!files.has('rules/semantic-rules-v1.json')) { console.error('semantic rules missing from archive'); process.exit(1); }
+          console.log('extracted archive validates:', registry.size, 'schemas,', manifest.files.length, 'files');
+          "

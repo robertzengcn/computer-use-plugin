@@ -64,7 +64,7 @@ describe('verifyRelease gates (CU-PLUGIN-21, CU-INST-11)', () => {
   it('good closure verifies clean', async () => {
     const report = await verifyRelease(join(FIXTURES, 'good', 'release.json'), SCHEMA);
     expect(report.failures).toEqual([]);
-    expect(report.artifactCount).toBe(6);
+    expect(report.artifactCount).toBe(8);
   });
 
   it('missing required evidence suite fails and names the gate', async () => {

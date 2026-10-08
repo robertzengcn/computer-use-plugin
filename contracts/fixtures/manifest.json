@@ -438,6 +438,12 @@
       "file": "transforms/valid/tf-windows-dpi-150.json",
       "expectation": "valid",
       "description": "tf-windows-dpi-150 (valid)"
+    },
+    {
+      "schema": "https://aifetchly.dev/schemas/computer-use/tools/public-tools-v1.json",
+      "file": "tools/valid/public-tools-with-observe-state.json",
+      "expectation": "valid",
+      "description": "observe result carries structured state; capabilities include grounder/planner (E16)"
     }
   ]
 }

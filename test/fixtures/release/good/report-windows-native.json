@@ -1,0 +1,49 @@
+{
+  "schema": "computer-use-native-report-v1",
+  "run": {
+    "mode": "native-qualification",
+    "datasetId": "w1-smoke",
+    "datasetVersion": "0.1.0",
+    "runnerKind": "native-controlled",
+    "runnerLabel": "controlled native harness (candidate)"
+  },
+  "configuration": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "test",
+    "adapterVersion": "0.1.0",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
+  },
+  "cases": [
+    {
+      "caseId": "win32-x64-launch",
+      "split": "regression",
+      "fixtureHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "expected": "native-launch",
+      "actual": "ok",
+      "regionHit": null,
+      "status": "pass",
+      "reason": "controlled harness launch (candidate)",
+      "inferenceMs": 10
+    }
+  ],
+  "aggregate": {
+    "planned": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "regionHitRate": null,
+    "absenceFalseAccepts": 0,
+    "latency": {
+      "p50": 10,
+      "p95": 10,
+      "max": 10
+    }
+  },
+  "qualification": {
+    "missingEvidence": [],
+    "producerOnly": true
+  }
+}

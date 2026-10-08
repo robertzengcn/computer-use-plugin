@@ -141,31 +141,48 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
     });
 
     const killTree = (): void => {
-      if (child.exitCode !== null || child.signalCode !== null) {
-        return;
-      }
-      // B19: best-effort descendant cleanup. The child owns its own process
-      // group on POSIX (detached), so the negative PID signal reaches
-      // descendants; Windows taskkill walks the tree explicitly.
+      // E13: never return early when the immediate child has exited. Descendants
+      // in the owned process group may still hold stdio pipes and delay 'close'
+      // indefinitely; the deadline must still terminate/detach them within a
+      // bounded time. Only the owned group (negative PID, detached leader) or
+      // an explicit Windows taskkill /T tree is ever signalled.
       if (process.platform === 'win32') {
-        child.kill(); // graceful console event first
+        try {
+          child.kill();
+        } catch {
+          /* already gone — still walk the tree below */
+        }
         const escalate = setTimeout(() => {
           if (child.pid !== undefined) {
             spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { shell: false, stdio: 'ignore' });
           }
-          child.kill('SIGKILL');
+          try {
+            child.kill('SIGKILL');
+          } catch {
+            /* already gone */
+          }
         }, killGraceMs);
         escalate.unref();
+        scheduleForcedFinish();
         return;
       }
       if (child.pid !== undefined) {
         try {
+          // Negative PID = owned process group only (detached leader).
           process.kill(-child.pid, 'SIGTERM');
         } catch {
-          child.kill('SIGTERM');
+          try {
+            child.kill('SIGTERM');
+          } catch {
+            /* already gone */
+          }
         }
       } else {
-        child.kill('SIGTERM');
+        try {
+          child.kill('SIGTERM');
+        } catch {
+          /* already gone */
+        }
       }
       const escalate = setTimeout(() => {
         if (child.pid !== undefined) {
@@ -175,9 +192,46 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
             /* already gone */
           }
         }
-        child.kill('SIGKILL');
+        try {
+          child.kill('SIGKILL');
+        } catch {
+          /* already gone */
+        }
       }, killGraceMs);
       escalate.unref();
+      scheduleForcedFinish();
+    };
+
+    // E13: enforce a bounded close even if descendants inherit stdio and the
+    // 'close' event is delayed past the deadline. Destroys owned pipes and
+    // resolves within killGraceMs + bound; never touches unrelated processes.
+    let forcedFinishTimer: NodeJS.Timeout | undefined;
+    const scheduleForcedFinish = (): void => {
+      if (forcedFinishTimer !== undefined) {
+        return;
+      }
+      forcedFinishTimer = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        // Detach/close owned descendant resources: destroy pipes so 'close'
+        // can fire; the group already received TERM/KILL above.
+        try {
+          child.stdout?.destroy();
+        } catch {
+          /* ignore */
+        }
+        try {
+          child.stderr?.destroy();
+        } catch {
+          /* ignore */
+        }
+        // If 'close' still has not fired (descendant holds pipes open),
+        // resolve now within the tested bound rather than waiting indefinitely.
+        // Use exitCode if the parent already exited, else null.
+        finish(child.exitCode);
+      }, killGraceMs + 1000);
+      forcedFinishTimer.unref?.();
     };
 
     const timeout = timeoutMs === undefined ? undefined : setTimeout(() => {
@@ -199,6 +253,9 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
       settled = true;
       if (timeout !== undefined) {
         clearTimeout(timeout);
+      }
+      if (forcedFinishTimer !== undefined) {
+        clearTimeout(forcedFinishTimer);
       }
       signal?.removeEventListener('abort', onAbort);
       const outcome = timedOut || cancelled ? 'cancelled' : exitCode === 0 ? 'ok' : 'failed';
@@ -222,9 +279,21 @@ export function runProcess(options: RunProcessOptions): Promise<ProcessResult> {
       if (timeout !== undefined) {
         clearTimeout(timeout);
       }
+      if (forcedFinishTimer !== undefined) {
+        clearTimeout(forcedFinishTimer);
+      }
       signal?.removeEventListener('abort', onAbort);
       reject(new Error(`spawn ${executable} failed: ${error.message}`));
     });
     child.on('close', (code: number | null) => finish(code));
+    // E13: if the parent exits but pipes stay open (descendant inherits
+    // stdio), 'close' is delayed. Start the bounded forced-finish path on
+    // 'exit' when a deadline/cancellation is armed so owned resources are
+    // still terminated/detached within the tested bound.
+    child.on('exit', () => {
+      if ((timedOut || cancelled) && !settled) {
+        scheduleForcedFinish();
+      }
+    });
   });
 }

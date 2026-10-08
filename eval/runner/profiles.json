@@ -10,7 +10,10 @@
         "adapterVersion": "0.1.0",
         "preprocessingRevision": "prep-v1",
         "decodingRevision": "dec-v1",
-        "calibrationRevision": "cal-v1"
+        "calibrationRevision": "cal-v1",
+        "onnxRuntimeVersion": "1.20.0",
+        "executionProvider": "dml",
+        "modelManifestSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
       }
     },
     "synthetic-deterministic": {

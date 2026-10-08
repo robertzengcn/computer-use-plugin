@@ -307,6 +307,10 @@
             },
             "metadata": {
               "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json#/$defs/observationMetadata"
+            },
+            "state": {
+              "$ref": "https://aifetchly.dev/schemas/computer-use/desktop/observation-v1.json#/$defs/observationState",
+              "$comment": "E16: structured window/AX state (design §3.1). Optional for backward compatibility; when present it carries the bounded windows/axTree required for host validation. Raw coordinates/approval/grant fields remain rejected for actions."
             }
           }
         }

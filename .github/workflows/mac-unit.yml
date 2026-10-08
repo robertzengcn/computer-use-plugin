@@ -20,7 +20,8 @@ jobs:
           status=$(node -e "console.log(JSON.parse(require('fs').readFileSync('adapters/macos/ghost-os/upstream.lock','utf8')).status)")
           echo "ghost-os upstream.lock status: $status"
           if [ "$status" = "pinned" ]; then
-            echo "::notice::helper pinned — P0-E decision recorded; Swift package build/test must be added to this job"
+            echo "::error::helper pinned but no Swift package build/test exists — P0-E/P3 must add the selected source, Package.resolved, build and unit tests before reporting success (E17)" >&2
+            exit 1
           elif [ "$status" != "unpinned" ]; then
             echo "::error::unknown lock status '$status'" >&2
             exit 1

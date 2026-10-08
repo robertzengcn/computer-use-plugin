@@ -3,6 +3,7 @@
  * Replay and comparison are read-only, local and process-free: neither mode
  * can execute a recorded click or start a desktop backend (CU-PLUGIN-12).
  */
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -18,6 +19,7 @@ import {
   loadTraceBundle,
   recordedRunner,
   syntheticRunner,
+  type RunnerConfiguration,
   type RunnerProfile,
 } from './runner/runners.js';
 
@@ -41,8 +43,9 @@ interface DatasetManifest {
 const DATASET_SCHEMA_ID = 'https://aifetchly.dev/schemas/computer-use/eval/dataset-manifest-v1.json';
 
 /** Validate and load a dataset manifest through the canonical registry (B09). */
-async function loadDataset(evalDir: string, datasetId: string): Promise<DatasetManifest> {
-  const raw = await readFile(join(evalDir, 'datasets', datasetId, 'dataset.json'), 'utf8');
+async function loadDataset(evalDir: string, datasetId: string): Promise<DatasetManifest & { manifestSha256: string }> {
+  const datasetPath = join(evalDir, 'datasets', datasetId, 'dataset.json');
+  const raw = await readFile(datasetPath, 'utf8');
   const manifest = JSON.parse(raw) as unknown;
   const { loadContractRegistry } = await import('../tooling/contracts/registry.js');
   const validator = loadContractRegistry(join(process.cwd(), 'contracts')).compile(DATASET_SCHEMA_ID);
@@ -52,11 +55,56 @@ async function loadDataset(evalDir: string, datasetId: string): Promise<DatasetM
       `dataset ${datasetId} fails dataset-manifest-v1: ${first?.instancePath ?? ''} ${first?.message ?? 'invalid'}`,
     );
   }
-  const ids = (manifest as DatasetManifest).cases.map((entry) => entry.id);
+  const typed = manifest as DatasetManifest;
+  const ids = typed.cases.map((entry) => entry.id);
   if (new Set(ids).size !== ids.length) {
     throw new Error(`dataset ${datasetId}: duplicate case ids`);
   }
-  return manifest as DatasetManifest;
+  // E15: define what each content hash covers (case id + expected geometry
+  // canonical JSON) and verify the referenced bytes. Tampered fixture bytes
+  // with unchanged declared hashes fail instead of scoring silently.
+  for (const entry of typed.cases) {
+    if (typeof entry.contentSha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(entry.contentSha256)) {
+      throw new Error(`dataset ${datasetId} case '${entry.id}' has invalid contentSha256 (must be 64 hex)`);
+    }
+    const expectedHash = computeCaseContentHash(entry.id, entry.expected);
+    if (expectedHash.toLowerCase() !== entry.contentSha256.toLowerCase()) {
+      throw new Error(
+        `dataset ${datasetId} case '${entry.id}' contentSha256 mismatch: declared ${entry.contentSha256.slice(0, 8)}… != computed ${expectedHash.slice(0, 8)}… — fixture bytes were tampered or hash is stale`,
+      );
+    }
+  }
+  const manifestSha256 = createHash('sha256').update(raw).digest('hex');
+  return { ...(typed as DatasetManifest), manifestSha256 } as DatasetManifest & { manifestSha256: string };
+}
+
+/** E15: canonical content hash covering case identity + expected geometry.
+ * Matches the Python fixture generator (json.dumps sort_keys, separators).
+ */
+function computeCaseContentHash(
+  id: string,
+  expected: { kind: string; region?: { x: number; y: number; w: number; h: number } },
+): string {
+  const canonical = canonicalJson({ id, expected: normalizeExpected(expected) });
+  return createHash('sha256').update(canonical).digest('hex');
+}
+
+function normalizeExpected(expected: { kind: string; region?: { x: number; y: number; w: number; h: number } }): unknown {
+  if (expected.kind === 'region' && expected.region !== undefined) {
+    return { kind: 'region', region: expected.region };
+  }
+  return { kind: expected.kind };
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value) ?? '';
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => canonicalJson(v)).join(',')}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(',')}}`;
 }
 
 function datasetInputs(manifest: DatasetManifest): EvalCaseInput[] {
@@ -120,18 +168,34 @@ export const evalCommands: readonly CommandSpec[] = [
         };
       }
       try {
+        // E09: preserve the complete verified bundle identity (provider/runtime/
+        // manifest included) — never drop identities while constructing steps,
+        // and label the report from the verified bundle plus runner kind so
+        // runner differences stay distinguishable.
+        const bundleConfiguration: RunnerConfiguration = {
+          modelConfigurationId: manifest.configuration.modelConfigurationId,
+          adapterId: manifest.configuration.adapterId,
+          adapterVersion: manifest.configuration.adapterVersion,
+          preprocessingRevision: manifest.configuration.preprocessingRevision,
+          decodingRevision: manifest.configuration.decodingRevision,
+          calibrationRevision: manifest.configuration.calibrationRevision,
+          ...(manifest.configuration.onnxRuntimeVersion !== undefined
+            ? { onnxRuntimeVersion: manifest.configuration.onnxRuntimeVersion }
+            : {}),
+          ...(manifest.configuration.executionProvider === 'dml' ||
+          manifest.configuration.executionProvider === 'coreml' ||
+          manifest.configuration.executionProvider === 'cpu'
+            ? { executionProvider: manifest.configuration.executionProvider }
+            : {}),
+          ...(manifest.configuration.modelManifestSha256 !== undefined
+            ? { modelManifestSha256: manifest.configuration.modelManifestSha256 }
+            : {}),
+        };
         const run = recordedRunner(profile, records.map((record) => ({
           caseId: record.caseId,
           candidates: record.candidates,
           inferenceMs: record.inferenceMs,
-          configuration: {
-            modelConfigurationId: manifest.configuration.modelConfigurationId,
-            adapterId: manifest.configuration.adapterId,
-            adapterVersion: manifest.configuration.adapterVersion,
-            preprocessingRevision: manifest.configuration.preprocessingRevision,
-            decodingRevision: manifest.configuration.decodingRevision,
-            calibrationRevision: manifest.configuration.calibrationRevision,
-          },
+          configuration: bundleConfiguration,
         })));
         const inputs: EvalCaseInput[] = expectedSource.cases.map((entry) => ({
           caseId: entry.id,
@@ -143,22 +207,50 @@ export const evalCommands: readonly CommandSpec[] = [
             region: 'region' in entry.expected ? entry.expected.region : undefined,
           },
         }));
-        const outcomes = expectedSource.cases.map((entry) => {
-          const result = run(entry.id);
-          return {
-            caseId: result.caseId,
-            candidates: result.candidates.map((candidate) => candidate.point),
-            inferenceMs: result.inferenceMs,
-          };
-        });
+        // E09: missing records produce named skipped case evidence via
+        // evaluateCases (outcome absent => skipped), not an unstructured exception.
+        const outcomes: { caseId: string; candidates: { x: number; y: number }[]; inferenceMs: number }[] = [];
+        for (const entry of expectedSource.cases) {
+          try {
+            const result = run(entry.id);
+            outcomes.push({
+              caseId: result.caseId,
+              candidates: result.candidates.map((candidate) => candidate.point),
+              inferenceMs: result.inferenceMs,
+            });
+          } catch (error) {
+            if (error instanceof IncompatibleConfigurationException) {
+              throw error;
+            }
+            // Missing recorded evidence for this case: omit from outcomes so
+            // evaluateCases records a named skipped (not a pass).
+            continue;
+          }
+        }
         // B17: records outside the expected case set must not vanish silently.
         const recordIds = new Set(records.map((record) => record.caseId));
         const extra = expectedSource.cases.filter((entry) => !recordIds.has(entry.id)).length;
+        // E15: complete provenance — run ID, source commit, fixture-manifest
+        // hash, tool versions and explicit unavailable measurements.
+        const startedAt = new Date().toISOString();
         const report = evaluateCases(
           inputs,
           outcomes,
-          { mode: 'replay', datasetId: expectedSource.label, datasetVersion: `${expectedSource.version}+trace:${manifest.traceId}`, runnerKind: profile.kind, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() },
-          profile.configuration,
+          {
+            mode: 'replay',
+            datasetId: expectedSource.label,
+            datasetVersion: `${expectedSource.version}+trace:${manifest.traceId}`,
+            runnerKind: profile.kind,
+            startedAt,
+            finishedAt: new Date().toISOString(),
+            runId: `replay-${manifest.traceId}`,
+            sourceCommit: 'unknown (portable: git commit not recorded offline)',
+            ...(dataset !== undefined ? { datasetManifestSha256: (dataset as unknown as { manifestSha256?: string }).manifestSha256 } : {}),
+            toolVersions: { node: process.version, evalRunner: 'replay-v1' },
+            memoryMb: null,
+            measurementMethod: 'unavailable (portable: no hardware/memory measurement)',
+          },
+          bundleConfiguration,
           { extraRecords: records.length - (expectedSource.cases.length - extra) },
         );
         await writeArtifacts(args, report, `replay-${manifest.traceId}`);
@@ -205,6 +297,7 @@ export const evalCommands: readonly CommandSpec[] = [
       }
       const manifest = await loadDataset(join(process.cwd(), EVAL_DIR), datasetId);
       const inputs = datasetInputs(manifest);
+      const manifestSha = (manifest as unknown as { manifestSha256?: string }).manifestSha256;
 
       const reports = (selected as RunnerProfile[]).map((profile) => {
         const runner = syntheticRunner(profile);
@@ -219,10 +312,30 @@ export const evalCommands: readonly CommandSpec[] = [
         return evaluateCases(
           inputs,
           outcomes,
-          { mode: 'compare', datasetId, datasetVersion: manifest.version, runnerKind: profile.kind },
+          {
+            mode: 'compare',
+            datasetId,
+            datasetVersion: manifest.version,
+            runnerKind: profile.kind,
+            runId: `compare-${datasetId}-${profile.name ?? profile.configuration.modelConfigurationId}`,
+            sourceCommit: 'unknown (portable: git commit not recorded offline)',
+            ...(manifestSha !== undefined ? { datasetManifestSha256: manifestSha } : {}),
+            toolVersions: { node: process.version, evalRunner: 'compare-v1' },
+            memoryMb: null,
+            measurementMethod: 'unavailable (portable: no hardware/memory measurement)',
+          },
           profile.configuration,
         );
       });
+      // E15: both modes can save JSON/HTML with exact identities and explicit
+      // unavailable measurements (same file-writing path as replay).
+      const outDir = stringFlag(args, 'out');
+      if (outDir !== undefined) {
+        for (let i = 0; i < reports.length; i++) {
+          const cfg = configNames[i] ?? `config-${i}`;
+          await writeArtifacts(args, reports[i]!, `compare-${datasetId}-${cfg}`);
+        }
+      }
 
       const identicalEvidence = reports.every((report) =>
         report.cases.every((record, index) => record.fixtureHash === reports[0]?.cases[index]?.fixtureHash),
@@ -267,7 +380,7 @@ interface ExpectedSource {
 
 function annotationsSource(
   traceId: string,
-  annotations: ReadonlyMap<string, { kind: 'region' | 'absent' | 'ambiguous'; region?: { x: number; y: number; w: number; h: number } }>,
+  annotations: ReadonlyMap<string, { kind: 'region' | 'absent' | 'ambiguous'; region?: { x: number; y: number; w: number; h: number }; consentClass?: 'synthetic' | 'reviewed'; split?: 'regression' | 'calibration' | 'held_out' }>,
   contentHashes?: Readonly<Record<string, string>>,
 ): ExpectedSource | undefined {
   if (annotations.size === 0) {
@@ -276,10 +389,15 @@ function annotationsSource(
   return {
     label: `${traceId} (annotations)`,
     version: `annotations:${traceId}`,
+    // E15: preserve reviewed/held-out provenance when the bundle carries it;
+    // reviewed evidence is never relabeled synthetic. Missing provenance
+    // defaults to synthetic/regression for tooling exercise only (labeled in
+    // runner output, never model accuracy), with unknown remaining explicit
+    // via content-hash verification and producerOnly flags in the report.
     cases: [...annotations.entries()].map(([id, annotation]) => ({
       id,
-      consentClass: 'synthetic' as const,
-      split: 'regression' as const,
+      consentClass: annotation.consentClass ?? ('synthetic' as const),
+      split: annotation.split ?? ('regression' as const),
       taskDescription: '',
       contentSha256: contentHashes?.[id],
       expected:
