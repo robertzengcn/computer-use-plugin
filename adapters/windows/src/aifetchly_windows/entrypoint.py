@@ -87,9 +87,16 @@ def require_pinned_backend(path: Path | None = None) -> frozenset[str]:
 
 
 def main() -> int:
-    """Start the pinned backend; exit 3 (missing prerequisites) while unpinned."""
+    """Start the pinned backend; exit 3 (missing prerequisites) while unpinned.
+
+    With a complete pin the reviewed-subset registration server runs on
+    stdio (server.py): upstream-pinned tools stay not-wired until the P0-C
+    integration strategy lands, but discovery/dispatch isolation, the local
+    read-only extensions and the protocol surface are exactly the production
+    ones (M02/M03).
+    """
     try:
-        require_pinned_backend()
+        allowlist = require_pinned_backend()
     except (
         BackendNotPinnedError,
         AllowlistError,
@@ -101,10 +108,9 @@ def main() -> int:
         # missing resource is a prerequisite failure, never a traceback.
         print(f"aifetchly-windows: {type(error).__name__}: {error}", file=sys.stderr)
         return 3
-    # Registration of the reviewed subset on the pinned upstream server is the
-    # P1 deliverable; reaching here means the pin exists.
-    print("aifetchly-windows: pinned backend registration not yet implemented", file=sys.stderr)
-    return 3
+    from .server import main as serve_main
+
+    return serve_main(allowlist)
 
 
 if __name__ == "__main__":  # pragma: no cover

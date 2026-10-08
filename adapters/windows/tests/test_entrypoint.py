@@ -60,3 +60,39 @@ def test_missing_resources_are_typed_prerequisite_failures(tmp_path, monkeypatch
     with pytest.raises(entrypoint.ResourcesUnavailableError, match="upstream.lock"):
         entrypoint.load_upstream_lock()
     assert entrypoint.main() == 3  # no traceback, typed failure only
+
+
+def test_pinned_entrypoint_serves_stdio(tmp_path, monkeypatch) -> None:
+    # M02/M03: with a complete pin the entrypoint runs the registration
+    # server; upstream tools answer not-wired and hidden tools are denied.
+    import json
+    import subprocess
+    import sys as _sys
+
+
+    lock = {
+        "status": "pinned",
+        "selectedRevision": "r1",
+        "pythonVersion": "3.14.4",
+        "sourceSha256": "b" * 64,
+        "component": "windows-mcp-backend",
+        "upstream": "https://example/Windows-MCP",
+    }
+    (tmp_path / "upstream.lock").write_text(json.dumps(lock))
+    (tmp_path / "tool-allowlist.json").write_text(
+        json.dumps({"version": 1, "policy": "deny-by-default",
+                    "allow": ["screenshot", "process_integrity"], "deny": ["powershell"]})
+    )
+    monkeypatch.setenv("AIFETCHLY_WINDOWS_RESOURCES", str(tmp_path))
+    code = (
+        "from aifetchly_windows.entrypoint import main\n"
+        "import sys\n"
+        "sys.exit(main())\n"
+    )
+    requests = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}) + "\n"
+    completed = subprocess.run(
+        [_sys.executable, "-c", code], input=requests, capture_output=True, text=True, timeout=30, check=False
+    )
+    assert completed.returncode == 0
+    listed = json.loads(completed.stdout.strip())
+    assert [t["name"] for t in listed["result"]["tools"]] == ["process_integrity", "screenshot"]
