@@ -1,0 +1,14 @@
+{
+  "caseId": "w1-gallery-swatch",
+  "candidates": [
+    {
+      "point": {
+        "x": 384.3,
+        "y": 176.7111
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 437
+}

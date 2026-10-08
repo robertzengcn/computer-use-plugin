@@ -1,0 +1,26 @@
+{
+  "caseId": "w1-filter-arrow",
+  "candidates": [
+    {
+      "point": {
+        "x": 273.525,
+        "y": 123.8222
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 435,
+  "preprocessing": {
+    "modelInputDimensions": {
+      "widthPx": 1008,
+      "heightPx": 672
+    },
+    "transformToCapture": {
+      "scaleX": 1.9047619047619047,
+      "scaleY": 1.6071428571428572,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  }
+}

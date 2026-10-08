@@ -14,6 +14,7 @@ import {
 } from '../tooling/cli.js';
 import { evaluateCases, renderHtmlReport, renderJsonReport, reportPasses, type EvalCaseInput } from './report.js';
 import {
+  applyTransformsToCapture,
   IncompatibleConfigurationException,
   loadProfilesFromFile,
   loadTraceBundle,
@@ -144,7 +145,15 @@ export const evalCommands: readonly CommandSpec[] = [
       const dataset = datasetId !== undefined
         ? await loadDataset(join(process.cwd(), EVAL_DIR), datasetId)
         : undefined;
-      const { manifest, records, annotations, annotationHashes } = await loadTraceBundle(bundle);
+      const { manifest, records: rawRecords, annotations, annotationHashes } = await loadTraceBundle(bundle);
+      // M05: score in original capture pixels — model-input candidates are
+      // mapped through their declared transform before region comparison.
+      let records: typeof rawRecords;
+      try {
+        records = applyTransformsToCapture(rawRecords);
+      } catch (error) {
+        return { outcome: 'failed', message: (error as Error).message };
+      }
       const expectedSource = dataset !== undefined
         ? { label: datasetId as string, version: dataset.version, cases: dataset.cases }
         : annotationsSource(manifest.traceId, annotations, annotationHashes);

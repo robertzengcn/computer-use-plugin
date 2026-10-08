@@ -1,0 +1,14 @@
+{
+  "caseId": "w1-header-cell-zh",
+  "candidates": [
+    {
+      "point": {
+        "x": 65.1,
+        "y": 124.4444
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 437
+}

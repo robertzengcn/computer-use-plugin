@@ -1,0 +1,17 @@
+{
+  "caseId": "w1-ambiguous-repeated-label",
+  "candidates": [],
+  "inferenceMs": 447,
+  "preprocessing": {
+    "modelInputDimensions": {
+      "widthPx": 1008,
+      "heightPx": 672
+    },
+    "transformToCapture": {
+      "scaleX": 1.9047619047619047,
+      "scaleY": 1.6071428571428572,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "caseId": "w1-sheet-tab-cjk",
+  "candidates": [
+    {
+      "point": {
+        "x": 266.7,
+        "y": 656.4444
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 436
+}

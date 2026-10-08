@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "cases": {
+    "w1-name-box-100": {
+      "kind": "region",
+      "region": {
+        "x": 24,
+        "y": 28,
+        "w": 140,
+        "h": 22
+      }
+    },
+    "w1-sheet-tab-cjk": {
+      "kind": "region",
+      "region": {
+        "x": 460,
+        "y": 1042,
+        "w": 96,
+        "h": 26
+      }
+    },
+    "w1-filter-arrow": {
+      "kind": "region",
+      "region": {
+        "x": 512,
+        "y": 190,
+        "w": 18,
+        "h": 18
+      }
+    },
+    "w1-ribbon-icon-only": {
+      "kind": "region",
+      "region": {
+        "x": 232,
+        "y": 118,
+        "w": 32,
+        "h": 32
+      }
+    },
+    "w1-gallery-swatch": {
+      "kind": "region",
+      "region": {
+        "x": 700,
+        "y": 260,
+        "w": 64,
+        "h": 48
+      }
+    },
+    "w1-header-cell-zh": {
+      "kind": "region",
+      "region": {
+        "x": 64,
+        "y": 188,
+        "w": 120,
+        "h": 24
+      }
+    },
+    "w1-absent-collapsed-group": {
+      "kind": "absent"
+    },
+    "w1-ambiguous-repeated-label": {
+      "kind": "ambiguous"
+    }
+  },
+  "contentSha256": {
+    "w1-name-box-100": "2ef80177195ecb612232174c5b81f6c328914ab8fbfc426ae2e8427f55ef2f40",
+    "w1-sheet-tab-cjk": "bd3ff5711aff0d6ca0ce3f33e5187f5659d9d782805901f5215d5d34b315f9cd",
+    "w1-filter-arrow": "04935d4420d2bde22e14be68bb13b2e2606a829680e7d36fba979f92d9b7762c",
+    "w1-ribbon-icon-only": "1bd9c17797fd8fdd0883d00cd4e8a7e0ed2df13428b80ef8dc2854e0812debe4",
+    "w1-gallery-swatch": "16aa0f91025981be4e5c98d3cebe3961ba7eccb0551664d154fce617fa82ed59",
+    "w1-absent-collapsed-group": "ba3344d4fed0fcf7303d6f6dcfcf35f9a953930f82221f80e077792568f41dff",
+    "w1-ambiguous-repeated-label": "338db41c4da368e12126a5cdd95fc91363786370551dd81c4fc7289aa605b7ad",
+    "w1-header-cell-zh": "ccdeffb28b4d8e5ff07be79bc76c13d924c96fd3fec7be3360a8e899fd417a1f"
+  }
+}

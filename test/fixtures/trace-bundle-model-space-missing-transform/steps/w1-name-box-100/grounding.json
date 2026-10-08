@@ -1,0 +1,14 @@
+{
+  "caseId": "w1-name-box-100",
+  "candidates": [
+    {
+      "point": {
+        "x": 49.35,
+        "y": 24.2667
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 435
+}

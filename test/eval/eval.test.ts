@@ -91,6 +91,42 @@ describe('eval replay (CU-PLUGIN-12)', () => {
   });
 });
 
+describe('replay applies preprocessing transforms (M05, design §8.4)', () => {
+  it('scores model_input_pixels candidates in original capture pixels', async () => {
+    const { io, stdout } = capture();
+    const code = await runCli(
+      ['--json', 'replay', '--bundle', join(REPO, 'test/fixtures/trace-bundle-model-space'), '--runner', 'recorded'],
+      evalCommands,
+      io,
+    );
+    expect(code).toBe(0);
+    const envelope = JSON.parse(stdout.join('') || '{}');
+    expect(envelope.status).toBe('ok');
+    expect(envelope.result.aggregate.executed).toBe(8);
+  });
+
+  it('a wrong transform produces misses, not silent passes', async () => {
+    const { io } = capture();
+    const code = await runCli(
+      ['replay', '--bundle', join(REPO, 'test/fixtures/trace-bundle-model-space-wrong'), '--runner', 'recorded'],
+      evalCommands,
+      io,
+    );
+    expect(code).toBe(1);
+  });
+
+  it('model-space candidates without a declared transform fail closed', async () => {
+    const { io, stdout } = capture();
+    const code = await runCli(
+      ['replay', '--bundle', join(REPO, 'test/fixtures/trace-bundle-model-space-missing-transform'), '--runner', 'recorded'],
+      evalCommands,
+      io,
+    );
+    expect(code).toBe(1);
+    expect(stdout.join('')).toMatch(/transformToCapture|never guesses/i);
+  });
+});
+
 describe('eval compare (identical evidence)', () => {
   it('compares two configurations on the same dataset', async () => {
     const { io, stdout } = capture();

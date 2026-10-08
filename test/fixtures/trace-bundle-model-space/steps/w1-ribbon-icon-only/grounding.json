@@ -1,0 +1,26 @@
+{
+  "caseId": "w1-ribbon-icon-only",
+  "candidates": [
+    {
+      "point": {
+        "x": 130.2,
+        "y": 83.3778
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 439,
+  "preprocessing": {
+    "modelInputDimensions": {
+      "widthPx": 1008,
+      "heightPx": 672
+    },
+    "transformToCapture": {
+      "scaleX": 1.9047619047619047,
+      "scaleY": 1.6071428571428572,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    }
+  }
+}

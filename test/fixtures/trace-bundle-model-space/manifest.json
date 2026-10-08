@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "traceId": "trace-w1-smoke-model-space",
+  "contractVersions": {
+    "tools": 1,
+    "desktop": 1,
+    "grounding": 1
+  },
+  "configuration": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "gui-actor-onnx",
+    "adapterVersion": "0.1.0",
+    "onnxRuntimeVersion": "1.20.0",
+    "executionProvider": "dml",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1",
+    "modelManifestSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "target": {
+    "windowTitle": "Leads.xlsx - Excel",
+    "appId": "excel.exe",
+    "os": "win32-10.0.26100",
+    "displayMetadata": {
+      "scaling": 1.5,
+      "locale": "en-US",
+      "theme": "light"
+    },
+    "consent": true
+  },
+  "plannerMode": "visual_planner",
+  "steps": [
+    {
+      "stepId": "w1-name-box-100",
+      "grounding": "steps/w1-name-box-100/grounding.json"
+    },
+    {
+      "stepId": "w1-sheet-tab-cjk",
+      "grounding": "steps/w1-sheet-tab-cjk/grounding.json"
+    },
+    {
+      "stepId": "w1-filter-arrow",
+      "grounding": "steps/w1-filter-arrow/grounding.json"
+    },
+    {
+      "stepId": "w1-ribbon-icon-only",
+      "grounding": "steps/w1-ribbon-icon-only/grounding.json"
+    },
+    {
+      "stepId": "w1-gallery-swatch",
+      "grounding": "steps/w1-gallery-swatch/grounding.json"
+    },
+    {
+      "stepId": "w1-absent-collapsed-group",
+      "grounding": "steps/w1-absent-collapsed-group/grounding.json"
+    },
+    {
+      "stepId": "w1-ambiguous-repeated-label",
+      "grounding": "steps/w1-ambiguous-repeated-label/grounding.json"
+    },
+    {
+      "stepId": "w1-header-cell-zh",
+      "grounding": "steps/w1-header-cell-zh/grounding.json"
+    }
+  ],
+  "redacted": true
+}

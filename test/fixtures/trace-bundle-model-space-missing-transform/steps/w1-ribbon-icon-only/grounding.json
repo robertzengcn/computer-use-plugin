@@ -1,0 +1,14 @@
+{
+  "caseId": "w1-ribbon-icon-only",
+  "candidates": [
+    {
+      "point": {
+        "x": 130.2,
+        "y": 83.3778
+      },
+      "score": 0.88,
+      "coordinateSpace": "model_input_pixels"
+    }
+  ],
+  "inferenceMs": 439
+}

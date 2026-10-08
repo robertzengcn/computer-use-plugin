@@ -29,6 +29,8 @@ export interface RunnerProfile {
 export interface GroundingCandidate {
   readonly point: Point;
   readonly score: number;
+  /** Declared coordinate space of the point (design §3.4.2). */
+  readonly coordinateSpace?: 'capture_pixels' | 'model_input_pixels';
 }
 
 export interface GroundingCaseResult {
@@ -197,10 +199,81 @@ export interface TraceBundleManifest {
   }[];
 }
 
+export interface TransformToCapture {
+  readonly scaleX: number;
+  readonly scaleY: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}
+
 export interface GroundingRecord {
   readonly caseId: string;
   readonly candidates: readonly GroundingCandidate[];
   readonly inferenceMs: number;
+  /** Preprocessing evidence (design §3.4.2): maps model-input pixels back to
+   * capture pixels. Required whenever a candidate declares model_input_pixels. */
+  readonly preprocessing?: {
+    readonly modelInputDimensions?: { readonly widthPx: number; readonly heightPx: number };
+    readonly transformToCapture?: TransformToCapture;
+  };
+}
+
+export class TransformApplicationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TransformApplicationError';
+  }
+}
+
+/**
+ * M05: map every model_input_pixels candidate into capture pixels using the
+ * record's declared transformToCapture before scoring, so expectations in
+ * original capture pixels compare correctly (design §8.4). Capture-space and
+ * unlabeled candidates pass through; a model-space candidate without a
+ * declared transform fails closed — replay never guesses a mapping.
+ */
+export function applyTransformsToCapture(records: readonly GroundingRecord[]): readonly GroundingRecord[] {
+  return records.map((record) => {
+    if (!record.candidates.some((candidate) => candidate.coordinateSpace === 'model_input_pixels')) {
+      return record;
+    }
+    const transform = record.preprocessing?.transformToCapture;
+    if (transform === undefined) {
+      throw new TransformApplicationError(
+        `record '${record.caseId}' declares model_input_pixels candidates without preprocessing.transformToCapture; replay never guesses a mapping`,
+      );
+    }
+    if (![transform.scaleX, transform.scaleY, transform.offsetX, transform.offsetY].every(Number.isFinite)) {
+      throw new TransformApplicationError(
+        `record '${record.caseId}' has a non-finite transformToCapture`,
+      );
+    }
+    const dims = record.preprocessing?.modelInputDimensions;
+    return {
+      ...record,
+      candidates: record.candidates.map((candidate) => {
+        if (candidate.coordinateSpace !== 'model_input_pixels') {
+          return candidate;
+        }
+        if (dims !== undefined) {
+          const { widthPx, heightPx } = dims;
+          if (candidate.point.x < 0 || candidate.point.x > widthPx || candidate.point.y < 0 || candidate.point.y > heightPx) {
+            throw new TransformApplicationError(
+              `record '${record.caseId}' candidate (${candidate.point.x}, ${candidate.point.y}) outside declared model input ${widthPx}x${heightPx}px`,
+            );
+          }
+        }
+        return {
+          ...candidate,
+          coordinateSpace: 'capture_pixels' as const,
+          point: {
+            x: candidate.point.x * transform.scaleX + transform.offsetX,
+            y: candidate.point.y * transform.scaleY + transform.offsetY,
+          },
+        };
+      }),
+    };
+  });
 }
 
 /** Path containment for bundle-relative references (B09, E09). */
