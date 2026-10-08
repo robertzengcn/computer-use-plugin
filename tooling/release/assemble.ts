@@ -7,8 +7,7 @@
  * manifest declares candidate state only, and release:verify remains the
  * gate.
  */
-import { createHash } from 'node:crypto';
-import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CommandResult } from '../cli.js';
 import { sha256File } from './hash.js';
@@ -162,7 +161,6 @@ export async function assembleRelease(repoRoot: string, input: AssembleInput): P
   };
   await writeFile(join(staging, 'release.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await rm(staging.replace(/\.staging$/, ''), { recursive: true, force: true }).catch(() => undefined);
-  const { rename } = await import('node:fs/promises');
   await rename(staging, releaseDir);
 
   return {
