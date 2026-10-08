@@ -1,5 +1,17 @@
 # PRD completion audit and actionable TODO — 2026-10-06
 
+> **2026-10-06 fix update:** all portable defects **E01–E18 are fixed** in the
+> commits after the reviewed one. Every reproduction probe from this audit was
+> re-run against the fixed tree and now fails closed (archive
+> extraction/staging, package enumeration/digest sensitivity, stripped and
+> malformed evidence, model reference closure, symlink containment, launch
+> profile validation, replay identity, AX/W-1 bounds, descendant deadlines,
+> manifest identities, eval provenance, public observe state, CI triggers,
+> docs). The M01–M10 work streams below remain open where they need Windows
+> hardware, approved weights + provider GPUs, a Mac, or pinned host/Hub
+> consumer builds — plus their genuinely new implementation work (real MCP
+> server, reference inference/export/parity, signed helper) as written.
+
 Reviewed commit: `268dbafa07564a9dcaee91e9d3af87bb6a438587`.
 
 Requirements: [plugin PRD v1.5](computer-use-plugin-prd.md) and [technical design v1.5](computer-use-plugin-technical-design.md).
