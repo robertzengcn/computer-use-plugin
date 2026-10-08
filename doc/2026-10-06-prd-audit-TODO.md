@@ -1,7 +1,16 @@
 # PRD completion audit and actionable TODO — 2026-10-06
 
 > **2026-10-06 fix update:** all portable defects **E01–E18 are fixed** in the
-> commits after the reviewed one. Every reproduction probe from this audit was
+> commits after the reviewed one, and the 2026-10-06/09 sessions additionally
+> landed portable M-item work: M05 replay now applies declared preprocessing
+> transforms (model-space bundle replays to identical hits; wrong/missing
+> transforms fail); M02/M03 gained the reviewed-subset stdio registration
+> server with a subprocess harness (deny-by-name on discovery AND dispatch,
+> entrypoint serves when pinned, upstream tools typed not-wired); M09 gained
+> `release:assemble` composing candidates with role-derived mandatory
+> evidence; M04 gained the §6.2 prompt assembly; M01 gained the
+> compatibility/version-evolution procedure with fail-closed tests; M10
+> pinned hatchling alongside the existing uv/python pins. Every reproduction probe from this audit was
 > re-run against the fixed tree and now fails closed (archive
 > extraction/staging, package enumeration/digest sensitivity, stripped and
 > malformed evidence, model reference closure, symlink containment, launch
