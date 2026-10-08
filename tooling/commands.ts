@@ -149,6 +149,26 @@ export const COMMANDS: readonly CommandSpec[] = [
     },
   },
   {
+    name: 'release:assemble',
+    summary: 'Compose built contracts+package into out/release-<version> with a generated candidate manifest',
+    handler: async (args, ctx) => {
+      const { assembleRelease } = await import('./release/assemble.js');
+      const target = flagString(args, 'target', 'win32-x64');
+      if (!isTarget(target)) {
+        return { outcome: 'invalidArgs', message: `unsupported --target ${target}` };
+      }
+      const version = flagString(args, 'version', '0.1.0-rc.1');
+      const { execFileSync } = await import('node:child_process');
+      let sourceCommit = 'unknown';
+      try {
+        sourceCommit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ctx.cwd, encoding: 'utf8' }).trim();
+      } catch {
+        sourceCommit = 'unknown';
+      }
+      return assembleRelease(ctx.cwd, { releaseVersion: version, sourceCommit, target });
+    },
+  },
+  {
     name: 'release:verify',
     summary: 'Validate closure, hashes, compatibility and required evidence',
     handler: async (args, ctx) => {
