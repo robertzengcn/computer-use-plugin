@@ -81,6 +81,7 @@ describe('command registry', () => {
         'model:parity',
         'model:prepare',
         'package:build',
+        'release:assemble',
         'release:verify',
       ].sort(),
     );
