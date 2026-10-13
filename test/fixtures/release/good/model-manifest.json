@@ -69,6 +69,16 @@
       "path": "health/expected.json",
       "bytes": 20,
       "sha256": "c75d9bf173cb320524d9cc28ca0c63dc351009cd8a3613802a2183c4b651f71d"
+    },
+    {
+      "path": "LICENSES/GUI-ACTOR",
+      "bytes": 11,
+      "sha256": "0188c8cdbb2342a2c57751a6fec4feb64612c8ec0407d0f21b2efc05bca45389"
+    },
+    {
+      "path": "LICENSES/QWEN2-VL",
+      "bytes": 18,
+      "sha256": "93e450d95744f20650b3b5395d1b806ae3f4ebe1db154a520c034b7751e6da77"
     }
   ],
   "licences": [
@@ -84,7 +94,7 @@
     }
   ],
   "parityReport": {
-    "sha256": "dcca73ee5fc191dbee48c0efb7ea62a1b17f2291fbc49f64ba72c4d6ec8f5059",
+    "sha256": "85a72abdc7a4532999bf05699a444dd184d001c5628cc1c3864c63830b9624bc",
     "fixtureCount": 1,
     "status": "candidate"
   },

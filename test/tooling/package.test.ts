@@ -166,3 +166,37 @@ describe('package:build (CU-PLUGIN-13)', () => {
     expect(entry).toBeDefined();
   });
 });
+
+describe('package:build symlink policy (E09)', () => {
+  it('a backend symlink escaping the repo fails packaging', async () => {
+    const root = await tempRepoWith('win32-x64', fullWindowsLock());
+    const outside = join(root, '..', 'cu-pkg-outside.txt');
+    await writeFile(outside, 'external-bytes');
+    const { symlink } = await import('node:fs/promises');
+    await symlink(outside, join(root, 'adapters', 'windows', 'src', 'aifetchly_windows', 'linked.py'));
+    const result = await packageBuild(root, 'win32-x64', join(root, 'out'));
+    expect(result.outcome).toBe('failed');
+    expect(result.message).toMatch(/escaping symlink/);
+    await rm(outside, { force: true }).catch(() => undefined);
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('a backend symlink inside the repo is materialized with matching bytes', async () => {
+    const root = await tempRepoWith('win32-x64', fullWindowsLock());
+    const { symlink } = await import('node:fs/promises');
+    const target = join(root, 'adapters', 'windows', 'src', 'aifetchly_windows', 'entrypoint.py');
+    const link = join(root, 'adapters', 'windows', 'src', 'aifetchly_windows', 'alias.py');
+    await symlink(target, link);
+    const result = await packageBuild(root, 'win32-x64', join(root, 'out'));
+    expect(result.outcome).toBe('ok');
+    const manifest = result.result as { files: { path: string; sha256: string }[] };
+    const entry = manifest.files.find((f) => f.path === 'adapters/windows/src/aifetchly_windows/alias.py');
+    expect(entry).toBeDefined();
+    const staged = await readFile(
+      join(root, 'out', `package-win32-x64-${'b'.repeat(10)}`, 'adapters', 'windows', 'src', 'aifetchly_windows', 'alias.py'),
+      'utf8',
+    );
+    expect(staged).toBe('# entry\n');
+    await rm(root, { recursive: true, force: true });
+  });
+});

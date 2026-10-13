@@ -111,18 +111,18 @@ describe('backend environment commands (fail closed on unpinned locks)', () => {
     await writeFile(join(cache, 'model-00002-of-00002.safetensors'), wrong);
     await writeFile(join(root, 'grounding', 'models.lock.json'), JSON.stringify({
       status: 'approved',
-      models: [{ modelId: 'microsoft/GUI-Actor-2B-Qwen2-VL', revision: 'r1', commercialUse: 'allowed',
+      models: [{ modelId: 'microsoft/GUI-Actor-2B-Qwen2-VL', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved',
         weightsFiles: [
           { path: 'model-00001-of-00002.safetensors', sha256: createHash('sha256').update(good).digest('hex'), bytes: good.length },
           { path: 'model-00002-of-00002.safetensors', sha256: createHash('sha256').update(Buffer.from('weights-part-b')).digest('hex'), bytes: 14 },
           { path: 'model-00003-of-00002.safetensors', sha256: 'c'.repeat(64), bytes: 8 },
         ] }],
     }));
-    const verification = await verifyModelCache(root, 'gui-actor-2b-fp16', cache);
+    const verification = await verifyModelCache(root, 'microsoft/GUI-Actor-2B-Qwen2-VL', cache);
     expect(verification.present).toEqual(['model-00001-of-00002.safetensors']);
     expect(verification.missing).toEqual(['model-00003-of-00002.safetensors']);
     expect(verification.hashMismatches).toEqual(['model-00002-of-00002.safetensors']);
-    const result = await modelPrepare(root, 'gui-actor-2b-fp16', cache);
+    const result = await modelPrepare(root, 'microsoft/GUI-Actor-2B-Qwen2-VL', cache);
     expect(result.outcome).toBe('missingPrerequisites');
     expect(result.message).toMatch(/never downloads/);
     await rm(root, { recursive: true, force: true });
@@ -137,12 +137,146 @@ describe('backend environment commands (fail closed on unpinned locks)', () => {
     await writeFile(join(cache, 'only.safetensors'), part);
     await writeFile(join(root, 'grounding', 'models.lock.json'), JSON.stringify({
       status: 'approved',
-      models: [{ modelId: 'm', revision: 'r', commercialUse: 'allowed',
+      models: [{ modelId: 'm', revision: 'b'.repeat(40), commercialUse: 'allowed', status: 'approved',
         weightsFiles: [{ path: 'only.safetensors', sha256: createHash('sha256').update(part).digest('hex'), bytes: part.length }] }],
     }));
-    const result = await modelPrepare(root, 'gui-actor-2b-fp16', cache);
+    const result = await modelPrepare(root, 'm', cache);
     expect(result.outcome).toBe('ok');
     expect(result.message).toMatch(/present: 1\/1/);
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('model:prepare rejects unknown configs, missing revisions/digests and blocked models (B13)', async () => {
+    async function lockRoot(lock: object): Promise<string> {      const root = await mkdtemp(join(tmpdir(), 'cu-model-b13-'));
+      await mkdir(join(root, 'grounding'), { recursive: true });
+      await writeFile(join(root, 'grounding', 'models.lock.json'), JSON.stringify(lock));
+      return root;
+    }
+    // Unknown config.
+    let root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    let result = await modelPrepare(root, 'nonexistent-config', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/unknown model configuration/);
+    await rm(root, { recursive: true, force: true });
+    // Missing revision.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: null, commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/no pinned revision/);
+    await rm(root, { recursive: true, force: true });
+    // Missing digest / wrong size shape.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'a.bin', bytes: 999 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/lacks a pinned .*SHA/);
+    await rm(root, { recursive: true, force: true });
+    // Blocked model.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'blocked', status: 'blocked-pending-commercial-licence', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/blocked/);
+    await rm(root, { recursive: true, force: true });
+    // Duplicate path.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [
+        { path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 },
+        { path: 'a.bin', sha256: 'b'.repeat(64), bytes: 1 },
+      ] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/duplicate/);
+    await rm(root, { recursive: true, force: true });
+    // Escaping path.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: '../evil.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/escapes/);
+    await rm(root, { recursive: true, force: true });
+    // Traversal config never probes the filesystem — unknown, not a read.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, '../../elsewhere/x', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/unknown model configuration/);
+    await rm(root, { recursive: true, force: true });
+    // N09: floating revision.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'main', commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/not immutable/);
+    await rm(root, { recursive: true, force: true });
+    // N09: not-qualified status.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'not-qualified', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/not an approved preparation state/);
+    await rm(root, { recursive: true, force: true });
+    // N09: unknown licence state.
+    root = await lockRoot({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'unknown', status: 'approved', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] }],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/not an approved licence state/);
+    await rm(root, { recursive: true, force: true });
+    // N09: duplicate model identity.
+    root = await lockRoot({
+      status: 'approved',
+      models: [
+        { modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'a.bin', sha256: 'a'.repeat(64), bytes: 1 }] },
+        { modelId: 'm', revision: 'b'.repeat(40), commercialUse: 'allowed', status: 'approved', weightsFiles: [{ path: 'b.bin', sha256: 'b'.repeat(64), bytes: 1 }] },
+      ],
+    });
+    result = await modelPrepare(root, 'm', join(root, 'cache'));
+    expect(result.outcome).toBe('missingPrerequisites');
+    expect(result.message).toMatch(/Ambiguous identity|ambiguous identity/);
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('N09: outside cache symlinks never satisfy preparation', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'cu-model-link-'));
+    const cache = join(root, 'cache');
+    const outside = join(root, 'outside');
+    await mkdir(cache, { recursive: true });
+    await mkdir(outside, { recursive: true });
+    await mkdir(join(root, 'grounding'), { recursive: true });
+    const secret = Buffer.from('external-bytes-1234');
+    await writeFile(join(outside, 'real.bin'), secret);
+    const { symlink } = await import('node:fs/promises');
+    await symlink(join(outside, 'real.bin'), join(cache, 'weights.bin'));
+    await writeFile(join(root, 'grounding', 'models.lock.json'), JSON.stringify({
+      status: 'approved',
+      models: [{ modelId: 'm', revision: 'a'.repeat(40), commercialUse: 'allowed', status: 'approved',
+        weightsFiles: [{ path: 'weights.bin', sha256: createHash('sha256').update(secret).digest('hex'), bytes: secret.length }] }],
+    }));
+    const result = await modelPrepare(root, 'm', cache);
+    expect(result.outcome).toBe('missingPrerequisites');
     await rm(root, { recursive: true, force: true });
   });
 });

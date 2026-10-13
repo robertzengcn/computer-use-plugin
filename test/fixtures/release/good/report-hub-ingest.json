@@ -1,0 +1,54 @@
+{
+  "schema": "computer-use-hub-report-v1",
+  "run": {
+    "mode": "ingest-check",
+    "datasetId": "hub-ingest",
+    "datasetVersion": "1.0.0",
+    "runnerKind": "hub-check",
+    "runnerLabel": "candidate hub mapping",
+    "sourceCommit": "abc1234",
+    "provider": "hub",
+    "timestamp": "2026-10-11T00:00:00Z",
+    "artifactDigest": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11",
+    "consumerBuild": "aifetchly-host-0.1.0"
+  },
+  "configuration": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "test",
+    "adapterVersion": "0.1.0",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
+  },
+  "cases": [
+    {
+      "caseId": "hub-mapping",
+      "split": "regression",
+      "fixtureHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "expected": "ok",
+      "actual": "ok",
+      "regionHit": null,
+      "status": "pass",
+      "reason": "candidate",
+      "inferenceMs": 1
+    }
+  ],
+  "aggregate": {
+    "planned": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "regionHitRate": null,
+    "absenceFalseAccepts": 0,
+    "latency": {
+      "p50": 1,
+      "p95": 1,
+      "max": 1
+    }
+  },
+  "qualification": {
+    "missingEvidence": [],
+    "producerOnly": true
+  }
+}

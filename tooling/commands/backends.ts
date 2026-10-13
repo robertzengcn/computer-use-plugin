@@ -6,7 +6,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { isAbsolute, join, relative } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { buildArgv, runProcess } from '../processes/run.js';
 import type { CommandResult } from '../cli.js';
@@ -177,6 +177,8 @@ interface ModelsLock {
   readonly models?: readonly {
     readonly modelId?: string;
     readonly revision?: string | null;
+    readonly commercialUse?: string;
+    readonly status?: string;
     readonly weightsFiles?: readonly { readonly path: string; readonly sha256?: string; readonly bytes?: number }[] | null;
   }[];
 }
@@ -184,14 +186,122 @@ interface ModelsLock {
 export interface ModelCacheVerification {
   readonly config: string;
   readonly cacheDir: string;
-  readonly expectedFiles: readonly { path: string; sha256: string | undefined }[];
+  readonly expectedFiles: readonly { path: string; sha256: string; bytes: number }[];
   readonly present: readonly string[];
   readonly missing: readonly string[];
   readonly hashMismatches: readonly string[];
 }
 
-/** M04: verify the configured cache against the approved lock. Never
- * downloads — fetching weights is the maintainer's explicit action (§6.6). */
+/** N09: revisions must be immutable pinned SHAs, never floating refs. */
+function isImmutableRevision(revision: string): boolean {
+  if (/^[0-9a-f]{40}$/i.test(revision)) {
+    return true;
+  }
+  // Allow explicit pinned release tags like v1.2.3 (immutable); reject
+  // branch names (main, latest, HEAD) and anything else.
+  return /^v\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$/.test(revision);
+}
+
+/** N09: explicitly approved spike/production states. `not-qualified` and
+ * unknown states are never sufficient, but approved spike candidates do
+ * not require prior production qualification. */
+const APPROVED_MODEL_STATUSES = new Set(['approved', 'approved-for-spike']);
+
+/** B13: resolve the selected configuration to exactly one locked model.
+ * Returns the model or an error message. Unknown configs, missing
+ * revisions/digests, blocked models, duplicates and escaping paths all
+ * fail — config is never a reporting label. N09 additionally requires
+ * immutable revisions, explicit approval/licence state and unambiguous
+ * model identity. */
+async function resolveLockedModel(
+  repoRoot: string,
+  lock: ModelsLock,
+  config: string | undefined,
+): Promise<{ model: NonNullable<ModelsLock['models']>[number] } | { error: string }> {
+  if (config === undefined || config.trim().length === 0) {
+    return { error: 'model:prepare requires --config <id> (the selected model configuration)' };
+  }
+  const models = lock.models ?? [];
+  // Direct match on modelId first (modelIds legitimately contain '/').
+  let selected = models.find((m) => m.modelId === config);
+  // Otherwise resolve via grounding/configs/<config>.json → modelId.
+  // Constrain config to a safe filename charset before joining it into a
+  // filesystem path — values like ../../elsewhere/x must not probe outside
+  // the configs dir (even though .json is appended and the result must still
+  // parse to a locked modelId).
+  if (selected === undefined && /^[A-Za-z0-9._-]+$/.test(config)) {
+    try {
+      const cfgRaw = await readFile(join(repoRoot, 'grounding', 'configs', `${config}.json`), 'utf8');
+      const cfg = JSON.parse(cfgRaw) as { modelId?: unknown };
+      if (typeof cfg.modelId === 'string') {
+        selected = models.find((m) => m.modelId === cfg.modelId);
+      }
+    } catch {
+      /* no config file — fall through to unknown-config error */
+    }
+  }
+  if (selected === undefined) {
+    return { error: `unknown model configuration '${config}': no locked model matches this id` };
+  }
+  // N09: duplicate model identities are ambiguous — refuse to guess.
+  const matches = models.filter((m) => m.modelId === selected.modelId);
+  if (matches.length > 1) {
+    return { error: `model configuration '${config}' matches ${matches.length} locked models — ambiguous identity refused` };
+  }
+  // Blocked/future models never prepare (CU-INST-11).
+  if (selected.commercialUse === 'blocked' || (selected.status ?? '').startsWith('blocked')) {
+    return { error: `model configuration '${config}' is blocked pending commercial licence clearance — preparation refused` };
+  }
+  // N09: explicit approval and licence eligibility. `not-qualified` and
+  // unknown states fail; approved spike candidates pass without prior
+  // production qualification.
+  if (!APPROVED_MODEL_STATUSES.has(selected.status ?? '')) {
+    return { error: `model configuration '${config}' status '${selected.status ?? 'missing'}' is not an approved preparation state (need approved or approved-for-spike)` };
+  }
+  if (selected.commercialUse !== 'allowed') {
+    return { error: `model configuration '${config}' commercialUse '${selected.commercialUse ?? 'missing'}' is not an approved licence state (need allowed)` };
+  }
+  if (typeof selected.revision !== 'string' || selected.revision.length === 0) {
+    return { error: `model configuration '${config}' has no pinned revision — the P0-D spike must pin it first` };
+  }
+  // N09: floating revisions (main/latest/HEAD) never establish an immutable
+  // approved source identity.
+  if (!isImmutableRevision(selected.revision)) {
+    return { error: `model configuration '${config}' revision '${selected.revision}' is not immutable — pin a full commit SHA or release tag` };
+  }
+  const files = selected.weightsFiles;
+  if (!Array.isArray(files) || files.length === 0) {
+    return { error: `model configuration '${config}' records no weight files — the P0-D pin must enumerate them` };
+  }
+  const seen = new Set<string>();
+  for (const file of files) {
+    if (typeof file.path !== 'string' || file.path.length === 0) {
+      return { error: `model configuration '${config}' has a weight file with an empty path` };
+    }
+    // Review: segment-based traversal check (a bare substring test would
+    // reject innocent names like `my..model.bin`). isAbsolute covers the
+    // host platform; the drive-letter pattern covers Windows-absolute
+    // spellings on any platform; realpath containment below is the backstop.
+    if (isAbsolute(file.path) || /^[A-Za-z]:[\\/]/.test(file.path) || file.path.split('/').includes('..') || file.path.split('\\').includes('..')) {
+      return { error: `model configuration '${config}' weight path escapes the cache: ${file.path}` };
+    }
+    if (seen.has(file.path)) {
+      return { error: `model configuration '${config}' lists duplicate weight path ${file.path}` };
+    }
+    seen.add(file.path);
+    if (typeof file.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(file.sha256)) {
+      return { error: `model configuration '${config}' file ${file.path} lacks a pinned 64-hex SHA-256` };
+    }
+    if (typeof file.bytes !== 'number' || !Number.isInteger(file.bytes) || file.bytes < 0) {
+      return { error: `model configuration '${config}' file ${file.path} lacks a declared byte size` };
+    }
+  }
+  return { model: selected };
+}
+
+/** M04/B13: verify ONLY the selected configuration's cache against the
+ * approved lock. Never downloads — fetching weights is the maintainer's
+ * explicit action (§6.6). Hashes and sizes are both required. */
 export async function verifyModelCache(
   repoRoot: string,
   config: string | undefined,
@@ -201,26 +311,52 @@ export async function verifyModelCache(
     await readFile(join(repoRoot, 'grounding', 'models.lock.json'), 'utf8'),
   ) as ModelsLock;
   const cacheDir = cacheDirOverride ?? process.env.AIFETCHLY_MODEL_CACHE ?? join(repoRoot, 'grounding', '.model-cache');
-  // All approved models' files are verified together: the cache backs the
-  // whole lock, not one configuration.
-  const expected: { path: string; sha256: string | undefined }[] = [];
-  for (const model of lock.models ?? []) {
-    for (const file of model.weightsFiles ?? []) {
-      expected.push({ path: file.path, sha256: file.sha256 });
+  const resolved = await resolveLockedModel(repoRoot, lock, config);
+  // Unresolvable configs verify nothing — callers surface the error.
+  // Preserve shape: empty expectations signal the misconfiguration.
+  if ('error' in resolved) {
+    return { config: config ?? '(all)', cacheDir, expectedFiles: [], present: [], missing: [], hashMismatches: [] };
+  }
+  const expected: { path: string; sha256: string; bytes: number }[] = [];
+  for (const file of resolved.model.weightsFiles ?? []) {
+    // Validation guarantees sha256/bytes present; narrow for TS.
+    if (typeof file.sha256 === 'string' && typeof file.bytes === 'number') {
+      expected.push({ path: file.path, sha256: file.sha256, bytes: file.bytes });
     }
   }
   const present: string[] = [];
   const missing: string[] = [];
   const hashMismatches: string[] = [];
+  const { stat, lstat, realpath } = await import('node:fs/promises');
+  // N09: resolve the cache root once so symlinked cache entries escaping
+  // it are rejected even though stat()/hashing follow links.
+  const realCache = await realpath(cacheDir).catch(() => cacheDir);
   for (const file of expected) {
     const absolute = join(cacheDir, file.path);
-    if (!file.path.includes('/')) {
-      // Top-level names stay flat in the cache root.
+    // N09: outside symlinks never satisfy the cache, even with matching
+    // bytes — preparation success must imply a contained cache.
+    const realTarget = await realpath(absolute).catch(() => undefined);
+    if (realTarget !== undefined) {
+      const rel = relative(realCache, realTarget);
+      if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+        hashMismatches.push(file.path);
+        continue;
+      }
+    }
+    const linkInfo = await lstat(absolute).catch(() => undefined);
+    if (linkInfo !== undefined && linkInfo.isSymbolicLink() && realTarget === undefined) {
+      missing.push(file.path);
+      continue;
+    }
+    const info = await stat(absolute).catch(() => undefined);
+    if (info === undefined) {
+      missing.push(file.path);
+      continue;
     }
     const digest = await sha256File(absolute).catch(() => undefined);
     if (digest === undefined) {
       missing.push(file.path);
-    } else if (file.sha256 !== undefined && digest !== file.sha256) {
+    } else if (digest !== file.sha256 || info.size !== file.bytes) {
       hashMismatches.push(file.path);
     } else {
       present.push(file.path);
@@ -244,8 +380,15 @@ export async function modelPrepare(
       message: `grounding/models.lock.json status is '${status ?? 'malformed'}': the P0-D spike must pin revisions and weight hashes before anything is fetched. Downloads are always an explicit step, never an implicit fallback (design §6.6).`,
     };
   }
-  // M04: with an approved lock, prepare verifies the configured cache and
-  // reports exactly what is present/missing — it still never downloads.
+  // B13: resolve and validate the selected configuration first — unknown
+  // configs, missing revisions/digests, blocked models, duplicates and
+  // escaping paths fail here, never as a false success.
+  const resolved = await resolveLockedModel(repoRoot, lock, config);
+  if ('error' in resolved) {
+    return { outcome: 'missingPrerequisites', message: resolved.error };
+  }
+  // M04: with an approved lock, prepare verifies the selected config's
+  // cache and reports exactly what is present/missing — it still never downloads.
   const verification = await verifyModelCache(repoRoot, config, cacheDirOverride);
   const lines = [
     `model:prepare --config ${config ?? '<id>'}: lock approved; cache verified, nothing downloaded`,

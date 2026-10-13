@@ -6,8 +6,9 @@
 import AdmZip from 'adm-zip';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
+import { publishStaging, stagingFor, tempFor } from '../release/publish.js';
 import { runConformance } from './validate.js';
 import { writeDeclarations } from './generate-types.js';
 import { loadContractRegistry } from './registry.js';
@@ -74,7 +75,6 @@ export async function buildContractArchive(repoRoot: string, outRoot: string): P
   };
   const version = `v${registryFile.version}`;
   const archiveDir = join(outRoot, `contracts-${version}`);
-  const stagingDir = `${archiveDir}.staging`;
 
   // E01: build from the complete registry/data closure, not a hardcoded dir
   // list. Every registered schema is included by path, so added schema
@@ -97,10 +97,10 @@ export async function buildContractArchive(repoRoot: string, outRoot: string): P
   // Ensure deterministic order.
   const sortedRels = [...relPaths].sort((a, b) => a.localeCompare(b));
 
-  // E02: stage into a fresh directory so deleted sources and previous-build
-  // contamination can never survive. The published dir is swapped atomically.
-  await rm(stagingDir, { recursive: true, force: true });
-  await rm(archiveDir, { recursive: true, force: true });
+  // E02: stage into a fresh unique directory so deleted sources and
+  // previous-build contamination can never survive, and concurrent runs
+  // never share staging (N08).
+  const stagingDir = stagingFor(archiveDir);
   await mkdir(stagingDir, { recursive: true });
 
   const files: { path: string; sha256: string; bytes: number }[] = [];
@@ -133,24 +133,36 @@ export async function buildContractArchive(repoRoot: string, outRoot: string): P
 
   // E01: validate the staged closure independently of the source checkout —
   // load every registry entry, compile every schema, and enforce the
-  // published rule inventory using only staged data.
-  validateStagedArchive(stagingDir);
+  // published rule inventory using only staged data. B12: on validation
+  // failure the previous archiveDir is preserved (staging is cleaned).
+  try {
+    validateStagedArchive(stagingDir);
+  } catch (error) {
+    await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+    throw error;
+  }
 
-  // E02: publish atomically; ZIP membership is exactly the declared closure
-  // plus manifest.json. Previous outputs are removed first so stale files
-  // can never survive rebuilding.
-  await rename(stagingDir, archiveDir);
+  // E02/N08: recoverable publish of the staged closure; a failed swap
+  // preserves the previous archiveDir instead of deleting it first.
+  const publishedDir = await publishStaging(stagingDir, archiveDir);
+  if (publishedDir.outcome !== 'ok') {
+    throw new Error(`contract archive ${publishedDir.message}`);
+  }
 
+  // N08: build the ZIP to a unique temp path, verify membership, then
+  // rename over the previous ZIP — a failed write never destroys the prior
+  // archive, and concurrent builds never share the temp path.
   const zipPath = join(outRoot, `computer-use-contracts-${version}.zip`);
-  await rm(zipPath, { force: true });
+  const zipTmp = tempFor(zipPath, 'tmp');
+  await rm(zipTmp, { force: true });
   const zip = new AdmZip();
   // Deterministic order: files sorted + manifest last.
   for (const file of files) {
     zip.addLocalFile(join(archiveDir, file.path), dirname(file.path) === '.' ? '' : dirname(file.path));
   }
   zip.addLocalFile(join(archiveDir, 'manifest.json'), '');
-  await zip.writeZipPromise(zipPath);
-  const zipBytes = await readFile(zipPath);
+  await zip.writeZipPromise(zipTmp);
+  const zipBytes = await readFile(zipTmp);
 
   // E02: verify ZIP membership exactly equals closure + manifest.
   const zipEntries = new Set(zip.getEntries().map((e) => e.entryName));
@@ -158,9 +170,14 @@ export async function buildContractArchive(repoRoot: string, outRoot: string): P
   const missing = [...expected].filter((p) => !zipEntries.has(p));
   const extra = [...zipEntries].filter((p) => !expected.has(p) && p !== '/');
   if (missing.length > 0 || extra.length > 0) {
+    await rm(zipTmp, { force: true }).catch(() => undefined);
     throw new Error(
       `contract archive ZIP membership mismatch: missing [${missing.join(', ')}] extra [${extra.join(', ')}]`,
     );
+  }
+  const publishedZip = await publishStaging(zipTmp, zipPath);
+  if (publishedZip.outcome !== 'ok') {
+    throw new Error(`contract archive ${publishedZip.message}`);
   }
 
   return {

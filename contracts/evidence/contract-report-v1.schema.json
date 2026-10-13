@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/evidence/contract-report-v1.json",
+  "title": "Computer Use contract-conformance evidence report",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://aifetchly.dev/schemas/computer-use/evidence/report-core-v1.json"
+    }
+  ],
+  "properties": {
+    "schema": {
+      "const": "computer-use-contract-report-v1"
+    },
+    "run": {
+      "properties": {
+        "runnerKind": {
+          "enum": [
+            "contract-check"
+          ]
+        }
+      }
+    }
+  }
+}

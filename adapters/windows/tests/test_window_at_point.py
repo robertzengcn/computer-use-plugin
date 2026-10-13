@@ -94,6 +94,44 @@ def test_ctypes_backend_fails_typed_off_windows() -> None:
         CtypesWindowApi()
 
 
+def test_unknown_ownership_is_none_not_false() -> None:
+    """B03: without a trusted owner, ownership stays unknown (None)."""
+    api = FakeWindowApi(
+        window_by_point={(1, 1): 3}, root_by_window={3: 3}, pid_by_window={3: 42}
+    )
+    result = resolve_window_at_point(DesktopPoint(1, 1), api)
+    assert result.is_own_process is None
+
+
+def test_bool_and_overflow_coordinates_rejected_without_native_call() -> None:
+    """B04: malformed coordinates never invoke the native API."""
+    calls: list[DesktopPoint] = []
+
+    class CountingApi(FakeWindowApi):
+        def window_from_point(self, point: DesktopPoint) -> int:
+            calls.append(point)
+            return 1
+
+    for bad in (
+        DesktopPoint(True, 0),  # type: ignore[arg-type]
+        DesktopPoint(2**40, 0),
+        DesktopPoint(0, -(2**31) - 1),
+    ):
+        with pytest.raises(WindowAtPointError):
+            resolve_window_at_point(bad, CountingApi(root_by_window={1: 1}, pid_by_window={1: 5}))
+    assert calls == []
+
+
+def test_valid_negative_coordinates_retained() -> None:
+    """B04: negative desktop coordinates (multi-monitor) remain valid."""
+    api = FakeWindowApi(
+        window_by_point={(-1920, -100): 9}, root_by_window={9: 9}, pid_by_window={9: 5}
+    )
+    result = resolve_window_at_point(DesktopPoint(-1920, -100), api, own_process_id=5)
+    assert result.process_id == 5
+    assert result.is_own_process is True
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="native Win32 execution (P0-C qualification machine)")
 def test_ctypes_chain_resolves_real_window() -> None:
     api = CtypesWindowApi()

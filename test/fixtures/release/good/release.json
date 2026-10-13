@@ -4,16 +4,22 @@
   "sourceCommit": "abc1234",
   "lockDigests": {
     "adapters/windows/uv.lock": "c59bfd458b0c4d3793c2d7d832598e5098bb925f94618a96f1cd82afbb12ab39",
-    "grounding/uv.lock": "2a2793b5a38132be234c63967d89d59baed58a15d55e3c8fb75ac9228feff841"
+    "grounding/uv.lock": "2a2793b5a38132be234c63967d89d59baed58a15d55e3c8fb75ac9228feff841",
+    "adapters/windows/upstream.lock": "4066cd444db5b8f9cd4dfae86a7854723d7578cef66cdc2dececb05ccce78b77",
+    "adapters/macos/ghost-os/upstream.lock": "1f47ff680b31c70ab56324bb1451e9e340ee66b0e37a743f115248f2700cafb8",
+    "grounding/models.lock.json": "7a1d0d3cf1535eeea945c13117aee03292c4bfd50fa84fcb94f682733f63288a"
   },
   "contractArchive": {
     "version": "v1",
     "sha256": "133239bd3f0ae2fb8979669e1f886f82dc4570bbd052b5b83252e395fd5aba11"
   },
   "requiredEvidence": [
+    "contract-conformance",
+    "host-consumer",
+    "hub-ingest",
+    "mac-native",
     "parity",
-    "windows-native",
-    "mac-native"
+    "windows-native"
   ],
   "artifacts": [
     {
@@ -33,7 +39,9 @@
       "compatibleWith": {
         "hostAppRange": ">=0.1.0"
       },
-      "noticesPath": "THIRD_PARTY_NOTICES"
+      "noticesPath": "THIRD_PARTY_NOTICES",
+      "noticesBytes": 35,
+      "noticesSha256": "24d42485d71625968fb34fd4e844d10fed4bde53a2fd73672940d2fc004d6bae"
     },
     {
       "role": "windows-env",
@@ -46,7 +54,12 @@
       "compatibleWith": {
         "hostAppRange": ">=0.1.0"
       },
-      "evidenceRequired": true
+      "evidenceRequired": true,
+      "launchProfileBytes": 476,
+      "launchProfileSha256": "f03f8c7738d0bab4e49a6c30de20a57f08f4af9294f94fb7599557e18af443d5",
+      "noticesBytes": 35,
+      "noticesSha256": "24d42485d71625968fb34fd4e844d10fed4bde53a2fd73672940d2fc004d6bae",
+      "qualification": "spike"
     },
     {
       "role": "mac-native",
@@ -57,13 +70,17 @@
       "signingIdentity": "Developer ID Application: AiFetchly (SPIKEPENDING)",
       "compatibleWith": {
         "hostAppRange": ">=0.1.0"
-      }
+      },
+      "launchProfile": "launch-profile-macos.json",
+      "launchProfileBytes": 327,
+      "launchProfileSha256": "87c3a6c358c6803bce4ba787aa248df15882c210ed9740897fc515f353b32f77",
+      "qualification": "spike"
     },
     {
       "role": "model",
       "location": "model-manifest.json",
-      "bytes": 2321,
-      "sha256": "9021dcfbe11e427608fd7239e219742244d4d4f9b4fa6d4bc2d9cbed9038bef2",
+      "bytes": 2622,
+      "sha256": "b6ead51b0df4ad5771f078d97a611bba88165acb97dba13b3e3eda04dc1ab5a0",
       "modelManifestPath": "model-manifest.json",
       "compatibleWith": {
         "runtimeId": "grounding-model-gui-actor-2b-fp16"
@@ -73,26 +90,50 @@
     {
       "role": "evidence",
       "location": "report-parity.json",
-      "bytes": 1224,
-      "sha256": "dcca73ee5fc191dbee48c0efb7ea62a1b17f2291fbc49f64ba72c4d6ec8f5059",
+      "bytes": 1350,
+      "sha256": "85a72abdc7a4532999bf05699a444dd184d001c5628cc1c3864c63830b9624bc",
       "suite": "parity",
       "reportPath": "report-parity.json"
     },
     {
       "role": "evidence",
       "location": "report-windows-native.json",
-      "bytes": 1195,
-      "sha256": "859829cb3535e0fbc6985cba7e47b3bf7279b8489523273d0e46358fb13933bd",
+      "bytes": 1456,
+      "sha256": "86991f5a705809bf1b749d6b8c5609d8d5adcc924167d207370c9d83bfa5f046",
       "suite": "windows-native",
       "reportPath": "report-windows-native.json"
     },
     {
       "role": "evidence",
       "location": "report-mac-native.json",
-      "bytes": 1198,
-      "sha256": "19888fdbd19f818422daa0c5f92e8d708708ace39f745ef72a6312ee022b2f2f",
+      "bytes": 1459,
+      "sha256": "41709a31167bb670f74c5beaa04428d9e66980aa531defd6313298a68bf0fedc",
       "suite": "mac-native",
       "reportPath": "report-mac-native.json"
+    },
+    {
+      "role": "evidence",
+      "location": "report-contract-conformance.json",
+      "bytes": 1235,
+      "sha256": "266439dddae532bad9f7b663f82887e0c13fe0c81980ee072cd6403e89c663e2",
+      "suite": "contract-conformance",
+      "reportPath": "report-contract-conformance.json"
+    },
+    {
+      "role": "evidence",
+      "location": "report-host-consumer.json",
+      "bytes": 1343,
+      "sha256": "c45e37a439a155c3aa9444a55e8fa92f7e4fcd37f92c1f2c1c24d0f6bf2d805a",
+      "suite": "host-consumer",
+      "reportPath": "report-host-consumer.json"
+    },
+    {
+      "role": "evidence",
+      "location": "report-hub-ingest.json",
+      "bytes": 1344,
+      "sha256": "0e99a7c2465266788395e69f2aa928e8b105a0f2cd59835ee57f449e38447512",
+      "suite": "hub-ingest",
+      "reportPath": "report-hub-ingest.json"
     }
   ]
 }

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "transport": "stdio-jsonrpc",
+  "argv": [
+    "<helper>",
+    "mcp"
+  ],
+  "cwd": "<managed-macos-root>",
+  "envPolicy": {
+    "inherit": [
+      "HOME",
+      "TMPDIR"
+    ],
+    "telemetry": "disabled",
+    "noGlobalPath": true
+  },
+  "stdoutPolicy": "protocol-only",
+  "upstreamLockRequired": "pinned"
+}

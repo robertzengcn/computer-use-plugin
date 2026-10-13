@@ -1,0 +1,52 @@
+{
+  "schema": "computer-use-contract-report-v1",
+  "run": {
+    "mode": "conformance",
+    "datasetId": "contracts-v1",
+    "datasetVersion": "1.0.0",
+    "runnerKind": "contract-check",
+    "runnerLabel": "candidate conformance",
+    "sourceCommit": "abc1234",
+    "provider": "contract",
+    "timestamp": "2026-10-11T00:00:00Z"
+  },
+  "configuration": {
+    "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",
+    "adapterId": "test",
+    "adapterVersion": "0.1.0",
+    "preprocessingRevision": "prep-v1",
+    "decodingRevision": "dec-v1",
+    "calibrationRevision": "cal-v1"
+  },
+  "cases": [
+    {
+      "caseId": "contract-schemas",
+      "split": "regression",
+      "fixtureHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "expected": "conform",
+      "actual": "ok",
+      "regionHit": null,
+      "status": "pass",
+      "reason": "candidate",
+      "inferenceMs": 1
+    }
+  ],
+  "aggregate": {
+    "planned": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "regionHitRate": null,
+    "absenceFalseAccepts": 0,
+    "latency": {
+      "p50": 1,
+      "p95": 1,
+      "max": 1
+    }
+  },
+  "qualification": {
+    "missingEvidence": [],
+    "producerOnly": true
+  }
+}

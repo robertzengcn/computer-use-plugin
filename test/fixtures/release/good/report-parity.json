@@ -5,7 +5,11 @@
     "datasetId": "w1-smoke",
     "datasetVersion": "0.1.0+trace:trace-w1-smoke-0001",
     "runnerKind": "recorded",
-    "runnerLabel": "recorded-evidence (not a model accuracy measurement)"
+    "runnerLabel": "recorded-evidence (not a model accuracy measurement)",
+    "sourceCommit": "abc1234",
+    "provider": "cpu",
+    "timestamp": "2026-10-11T00:00:00Z",
+    "hardware": "generic-x64"
   },
   "configuration": {
     "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",

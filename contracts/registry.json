@@ -61,6 +61,38 @@
     {
       "$id": "https://aifetchly.dev/schemas/computer-use/grounding/lifecycle-v1.json",
       "path": "grounding/lifecycle-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/evidence/report-core-v1.json",
+      "path": "evidence/report-core-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/evidence/eval-report-v1.json",
+      "path": "evidence/eval-report-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/evidence/native-report-v1.json",
+      "path": "evidence/native-report-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/evidence/host-report-v1.json",
+      "path": "evidence/host-report-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/evidence/hub-report-v1.json",
+      "path": "evidence/hub-report-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/evidence/contract-report-v1.json",
+      "path": "evidence/contract-report-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/launch/windows-profile-v1.json",
+      "path": "launch/windows-profile-v1.schema.json"
+    },
+    {
+      "$id": "https://aifetchly.dev/schemas/computer-use/launch/mac-profile-v1.json",
+      "path": "launch/mac-profile-v1.schema.json"
     }
   ]
 }

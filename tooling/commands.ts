@@ -35,6 +35,47 @@ function targetPlatform(target: Target): NodeJS.Platform {
   return target.split('-')[0] as NodeJS.Platform;
 }
 
+/**
+ * E06: resolve the recorded source identity with an explicit dirty-tree
+ * policy. Dirtiness is tri-state: true/false when git answers, undefined
+ * when it cannot (non-checkout) — only a known state is enforced, never
+ * assumed. Exported for unit tests (git is injected).
+ */
+export function resolveSourceCommit(
+  explicitCommit: string | undefined,
+  allowDirty: boolean,
+  git: (args: readonly string[]) => string,
+):
+  | { readonly outcome: 'ok'; readonly sourceCommit: string }
+  | { readonly outcome: 'missingPrerequisites' | 'invalidArgs'; readonly message: string } {
+  let dirty: boolean | undefined;
+  try {
+    dirty = git(['status', '--porcelain']).trim().length > 0;
+  } catch {
+    dirty = undefined;
+  }
+  if (dirty === true && !allowDirty) {
+    return { outcome: 'missingPrerequisites', message: 'worktree has uncommitted changes: pass --allow-dirty to record a -dirty source identity, or commit first' };
+  }
+  if (explicitCommit !== undefined) {
+    // A false `-dirty` claim on a known-clean tree is rejected rather
+    // than recorded.
+    if (explicitCommit.endsWith('-dirty') && dirty === false) {
+      return { outcome: 'invalidArgs', message: `explicit --source-commit '${explicitCommit}' claims a dirty tree, but the worktree is clean — drop the -dirty suffix` };
+    }
+    if (dirty === true && !explicitCommit.endsWith('-dirty')) {
+      return { outcome: 'ok', sourceCommit: `${explicitCommit}-dirty` };
+    }
+    return { outcome: 'ok', sourceCommit: explicitCommit };
+  }
+  try {
+    const head = git(['rev-parse', '--short', 'HEAD']).trim();
+    return { outcome: 'ok', sourceCommit: dirty === true ? `${head}-dirty` : head };
+  } catch {
+    return { outcome: 'missingPrerequisites', message: 'cannot determine source commit: pass --source-commit explicitly outside a git checkout' };
+  }
+}
+
 function wrongPlatformResult(target: Target): CommandResult {
   return {
     outcome: 'missingPrerequisites',
@@ -152,20 +193,34 @@ export const COMMANDS: readonly CommandSpec[] = [
     name: 'release:assemble',
     summary: 'Compose built contracts+package into out/release-<version> with a generated candidate manifest',
     handler: async (args, ctx) => {
+      // N06: unsupported flags fail rather than being silently ignored.
+      const known = new Set(['target', 'version', 'source-commit', 'package', 'package-digest', 'allow-dirty', 'json', 'help']);
+      for (const key of args.flags.keys()) {
+        if (!known.has(key)) {
+          return { outcome: 'invalidArgs', message: `unsupported --${key} for release:assemble` };
+        }
+      }
       const { assembleRelease } = await import('./release/assemble.js');
       const target = flagString(args, 'target', 'win32-x64');
       if (!isTarget(target)) {
         return { outcome: 'invalidArgs', message: `unsupported --target ${target}` };
       }
       const version = flagString(args, 'version', '0.1.0-rc.1');
+      const explicitCommit = optionalFlagString(args, 'source-commit');
+      const explicitPackage = optionalFlagString(args, 'package');
+      const explicitDigest = optionalFlagString(args, 'package-digest');
+      const allowDirty = args.flags.get('allow-dirty') === true;
       const { execFileSync } = await import('node:child_process');
-      let sourceCommit = 'unknown';
-      try {
-        sourceCommit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ctx.cwd, encoding: 'utf8' }).trim();
-      } catch {
-        sourceCommit = 'unknown';
+      const git = (args: readonly string[]): string =>
+        execFileSync('git', args as string[], { cwd: ctx.cwd, encoding: 'utf8' });
+      // E06: the dirty-tree policy always runs — even with an explicit
+      // commit. A dirty worktree is recorded only with --allow-dirty.
+      const resolved = resolveSourceCommit(explicitCommit, allowDirty, git);
+      if (resolved.outcome !== 'ok') {
+        return resolved;
       }
-      return assembleRelease(ctx.cwd, { releaseVersion: version, sourceCommit, target });
+      const sourceCommit = resolved.sourceCommit;
+      return assembleRelease(ctx.cwd, { releaseVersion: version, sourceCommit, target, packageDir: explicitPackage, packageDigest: explicitDigest });
     },
   },
   {
@@ -177,7 +232,12 @@ export const COMMANDS: readonly CommandSpec[] = [
         return { outcome: 'invalidArgs', message: 'release:verify requires --manifest <path>' };
       }
       try {
-        const report = await verifyRelease(resolve(ctx.cwd, manifest));
+        const report = await verifyRelease(
+          resolve(ctx.cwd, manifest),
+          join(ctx.cwd, 'tooling', 'release', 'schemas', 'release-manifest-v1.schema.json'),
+          join(ctx.cwd, 'contracts'),
+          { repoRoot: ctx.cwd },
+        );
         return {
           outcome: report.failures.length === 0 ? 'ok' : 'failed',
           message: formatVerification(report),

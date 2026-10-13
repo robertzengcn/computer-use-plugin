@@ -33,6 +33,17 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/artifact" }
+    },
+    "selectedPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dir", "target", "upstreamRevision"],
+      "properties": {
+        "dir": { "type": "string", "maxLength": 256 },
+        "target": { "type": "string", "maxLength": 32 },
+        "upstreamRevision": { "type": "string", "maxLength": 128 }
+      },
+      "$comment": "B11: exact out/ package identity combined into this candidate."
     }
   },
   "$defs": {
@@ -54,12 +65,37 @@
         "bytes": { "type": "integer", "minimum": 1 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "launchProfile": { "type": "string", "maxLength": 512 },
+        "launchProfileBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "$comment": "N05: bound byte size of the launch profile — profile bytes cannot drift without invalidating the digest."
+        },
+        "launchProfileSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "$comment": "N05: bound digest of the launch profile bytes."
+        },
         "signingIdentity": {
           "type": "string",
           "maxLength": 256,
           "$comment": "Required for mac-native: signature must survive extraction (CU-PLUGIN-13)."
         },
+        "qualification": {
+          "type": "string",
+          "enum": ["candidate", "qualified", "spike"],
+          "$comment": "N02/E04: explicit per-artifact qualification state. Candidate placeholders never qualify; spike blobs never satisfy a backend role silently."
+        },
         "noticesPath": { "type": "string", "maxLength": 512 },
+        "noticesBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "$comment": "N05: bound byte size of the referenced licence notices."
+        },
+        "noticesSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "$comment": "N05: bound digest of the referenced licence notice bytes."
+        },
         "modelManifestPath": {
           "type": "string",
           "maxLength": 512,

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/evidence/eval-report-v1.json",
+  "title": "Computer Use parity evidence report",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://aifetchly.dev/schemas/computer-use/evidence/report-core-v1.json"
+    }
+  ],
+  "properties": {
+    "schema": {
+      "const": "computer-use-eval-report-v1"
+    },
+    "run": {
+      "properties": {
+        "runnerKind": {
+          "enum": [
+            "recorded",
+            "synthetic",
+            "reference",
+            "onnx",
+            "onnx-reference"
+          ]
+        }
+      }
+    }
+  }
+}

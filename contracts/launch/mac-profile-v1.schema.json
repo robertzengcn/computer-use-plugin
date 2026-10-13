@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aifetchly.dev/schemas/computer-use/launch/mac-profile-v1.json",
+  "title": "Mac helper launch profile",
+  "description": "Exact reviewed Mac helper launch contract: helper mcp vector, managed root, disabled telemetry (design §5.1).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "argv", "cwd", "upstreamLockRequired"],
+  "properties": {
+    "version": { "const": 1 },
+    "argv": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "<helper>" },
+        { "const": "mcp" }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "cwd": { "enum": ["<managed-env-root>", "<managed-macos-root>"] },
+    "envPolicy": {
+      "type": "object",
+      "properties": {
+        "telemetry": { "const": "disabled" }
+      }
+    },
+    "upstreamLockRequired": { "const": "pinned" }
+  }
+}

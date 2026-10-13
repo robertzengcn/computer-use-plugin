@@ -89,10 +89,15 @@ def test_pinned_entrypoint_serves_stdio(tmp_path, monkeypatch) -> None:
         "import sys\n"
         "sys.exit(main())\n"
     )
-    requests = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}) + "\n"
+    requests = "\n".join([
+        json.dumps({"jsonrpc": "2.0", "id": 0, "method": "initialize"}),
+        json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}),
+    ]) + "\n"
     completed = subprocess.run(
         [_sys.executable, "-c", code], input=requests, capture_output=True, text=True, timeout=30, check=False
     )
     assert completed.returncode == 0
-    listed = json.loads(completed.stdout.strip())
+    out_lines = [line for line in completed.stdout.strip().splitlines() if line]
+    assert len(out_lines) == 2
+    listed = json.loads(out_lines[1])
     assert [t["name"] for t in listed["result"]["tools"]] == ["process_integrity", "screenshot"]

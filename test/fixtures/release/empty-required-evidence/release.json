@@ -4,7 +4,10 @@
   "sourceCommit": "abc1234",
   "lockDigests": {
     "adapters/windows/uv.lock": "c59bfd458b0c4d3793c2d7d832598e5098bb925f94618a96f1cd82afbb12ab39",
-    "grounding/uv.lock": "2a2793b5a38132be234c63967d89d59baed58a15d55e3c8fb75ac9228feff841"
+    "grounding/uv.lock": "2a2793b5a38132be234c63967d89d59baed58a15d55e3c8fb75ac9228feff841",
+    "adapters/windows/upstream.lock": "4066cd444db5b8f9cd4dfae86a7854723d7578cef66cdc2dececb05ccce78b77",
+    "adapters/macos/ghost-os/upstream.lock": "1f47ff680b31c70ab56324bb1451e9e340ee66b0e37a743f115248f2700cafb8",
+    "grounding/models.lock.json": "7a1d0d3cf1535eeea945c13117aee03292c4bfd50fa84fcb94f682733f63288a"
   },
   "contractArchive": {
     "version": "v1",
@@ -29,7 +32,9 @@
       "compatibleWith": {
         "hostAppRange": ">=0.1.0"
       },
-      "noticesPath": "THIRD_PARTY_NOTICES"
+      "noticesPath": "THIRD_PARTY_NOTICES",
+      "noticesBytes": 35,
+      "noticesSha256": "24d42485d71625968fb34fd4e844d10fed4bde53a2fd73672940d2fc004d6bae"
     },
     {
       "role": "windows-env",
@@ -42,7 +47,11 @@
       "compatibleWith": {
         "hostAppRange": ">=0.1.0"
       },
-      "evidenceRequired": true
+      "evidenceRequired": true,
+      "launchProfileBytes": 51,
+      "launchProfileSha256": "ce79a9bca99f31357ba919faa46d63965663de978a883c315c7ec9475630e09a",
+      "noticesBytes": 35,
+      "noticesSha256": "24d42485d71625968fb34fd4e844d10fed4bde53a2fd73672940d2fc004d6bae"
     },
     {
       "role": "mac-native",

@@ -85,7 +85,7 @@ def test_process_integrity_never_guesses_on_error() -> None:
     api = FakeApi({})
     with pytest.raises(IntegrityError, match="cannot open process"):
         process_integrity(1234, api)
-    with pytest.raises(IntegrityError, match="invalid process id"):
+    with pytest.raises(IntegrityError, match="outside DWORD range"):
         process_integrity(-1, api)
 
 
@@ -96,6 +96,36 @@ def test_ctypes_backend_fails_typed_off_windows() -> None:
         CtypesWinApi()
 
 
+def test_unknown_ownership_is_none_not_false() -> None:
+    """B03: without a trusted owner PID, ownership stays unknown (None)."""
+    api = FakeApi({42: integrity_sid(0x2000)})
+    report = process_integrity(42, api)
+    assert report.is_own_process is None
+
+
+def test_known_ownership_semantics() -> None:
+    """B03: own-helper, own-host, unrelated and unknown cases."""
+    api = FakeApi({7: integrity_sid(0x2000), 8: integrity_sid(0x3000)})
+    assert process_integrity(7, api, own_process_id=7).is_own_process is True
+    assert process_integrity(8, api, own_process_id=7).is_own_process is False
+    assert process_integrity(7, api, own_process_id=None).is_own_process is None
+
+
+def test_bool_and_overflow_pids_rejected_without_native_call() -> None:
+    """B04: booleans/overflows never reach the native API."""
+    calls: list[int] = []
+
+    class CountingApi:
+        def open_process_token_integrity(self, process_id: int) -> bytes:
+            calls.append(process_id)
+            return integrity_sid(0x2000)
+
+    for bad in (True, False, 2**32, 2**40, -1):
+        with pytest.raises(IntegrityError):
+            process_integrity(bad, CountingApi())  # type: ignore[arg-type]
+    assert calls == []
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="native Win32 execution (P0-C qualification machine)")
 def test_ctypes_reads_own_process_integrity() -> None:
     import os
@@ -103,4 +133,5 @@ def test_ctypes_reads_own_process_integrity() -> None:
     api = CtypesWinApi()
     report = process_integrity(os.getpid(), api)
     assert report.integrity_level in {"medium", "high"}
-    assert report.is_own_process is False
+    # Unknown ownership without a trusted owner context (B03).
+    assert report.is_own_process is None

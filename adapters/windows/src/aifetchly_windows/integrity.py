@@ -16,6 +16,9 @@ INTEGRITY_RID_MEDIUM = 0x2000
 INTEGRITY_RID_HIGH = 0x3000
 INTEGRITY_RID_SYSTEM = 0x4000
 
+# Win32 DWORD upper bound for process identifiers (B04).
+DWORD_MAX = 0xFFFFFFFF
+
 _LEVEL_BY_RID = {
     INTEGRITY_RID_LOW: "low",
     INTEGRITY_RID_MEDIUM: "medium",
@@ -60,11 +63,16 @@ def parse_integrity_level(sid_bytes: bytes) -> str:
 
 @dataclass(frozen=True)
 class IntegrityReport:
-    """Typed result for a process or window owner."""
+    """Typed result for a process or window owner.
+
+    ``is_own_process`` is ``None`` when ownership is unknown (no trusted
+    owner context was supplied) — unknown is never encoded as ``False``
+    (B03). Callers with a trusted owner PID receive an exact boolean.
+    """
 
     process_id: int
     integrity_level: str
-    is_own_process: bool = False
+    is_own_process: bool | None = None
 
 
 class WinApi(Protocol):
@@ -168,12 +176,24 @@ def process_integrity(
     api: WinApi,
     own_process_id: int | None = None,
 ) -> IntegrityReport:
-    """Resolve a PID's integrity level; never guesses on failure."""
-    if process_id < 0:
-        raise IntegrityError(f"invalid process id {process_id}")
+    """Resolve a PID's integrity level; never guesses on failure.
+
+    Rejects booleans and values outside the Win32 DWORD range before any
+    native call (B04). Ownership is only reported when a trusted owner PID
+    is supplied; otherwise it stays ``None`` (unknown, B03).
+    """
+    # Strict int check: bool is a subclass of int and must be rejected.
+    if type(process_id) is not int:
+        raise IntegrityError(f"invalid process id type {type(process_id).__name__}")
+    if own_process_id is not None and type(own_process_id) is not int:
+        raise IntegrityError("invalid owner process id type")
+    if process_id < 0 or process_id > DWORD_MAX:
+        raise IntegrityError(f"process id {process_id} outside DWORD range 0..{DWORD_MAX}")
+    if own_process_id is not None and (own_process_id < 0 or own_process_id > DWORD_MAX):
+        raise IntegrityError("owner process id outside DWORD range")
     sid = api.open_process_token_integrity(process_id)
     return IntegrityReport(
         process_id=process_id,
         integrity_level=parse_integrity_level(sid),
-        is_own_process=own_process_id == process_id,
+        is_own_process=(own_process_id == process_id) if own_process_id is not None else None,
     )

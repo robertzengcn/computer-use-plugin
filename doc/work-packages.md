@@ -1,16 +1,16 @@
 # Implementation work packages (design §9.1, CU-PLUGIN-22)
 
-> 2026-10-06 scope note (E18): the portable rows below were labeled COMPLETE
-> before the [PRD audit](2026-10-06-prd-audit-TODO.md) found portable defects
-> E01–E18. Those defects are fixed in this checkout (archive closure, package
-> hashing, release binding, replay identity, AX/W-1 bounds, subprocess bounds,
-> manifest identities, eval provenance, public observe state, CI triggers).
-> Remaining work is split into portable-done vs hardware/consumer-gated
-> (M01–M10): Windows backend provisioning/launch (M02/M03), reference/export/
-> parity/providers (M04/M05), fixtures/harness/native CI (M06/M08), Mac helper
-> selection/build/signing (M07), delivery/upgrade (M09) and toolchain pins
-> (M10). `model:prepare` verifies the approved cache and never downloads;
-> fetching weights is always the maintainer's explicit action (design §6.6).
+> 2026-10-11 scope note: the portable rows below are a producer skeleton —
+> the October audits found portable defects (October 10: B01–B13; October 11:
+> N01–N12) and this checkout's follow-up fixes (E01–E09) address the portable
+> subset only. Do NOT read any row as DONE for qualification: no host decoder
+> report exists (P0-B design exit still open — `contracts:check` alone does
+> not close it), no backend/model/Mac artifact is qualified, and
+> `release:verify` reports `candidate` (never `qualified`) on unpinned locks.
+> Open gates are E01–E09 in
+> [2026-10-11-prd-remaining-TODO.md](2026-10-11-prd-remaining-TODO.md) and
+> T01–T09 below. The [Oct 3 TODO](2026-10-03-implementation-TODO.md) banner is
+> history.
 > The [Oct 3 TODO](2026-10-03-implementation-TODO.md) banner is history.
 
 Every package names its owned paths, prerequisite pins, the exact commands a
@@ -22,15 +22,15 @@ Common setup (all packages): `npm ci` (Node 22 LTS via `.node-version`);
 Python packages additionally need `uv` — each syncs its own locked env with
 `uv sync --locked` run inside its directory (`adapters/windows/`, `grounding/`).
 
-## Portable foundation — DONE (E01–E18 fixed, M-handoffs open)
+## Portable foundation — PRODUCER SKELETON (open E01–E09; not qualified)
 
 | Package | Status | Verification commands (run from repo root) |
 | --- | --- | --- |
-| **P0-A Toolchain** | ✅ done | `npm run check` · `npm run build` |
-| **P0-B Contracts** | ✅ done (producer side) | `npm run contracts:check` · `npm run contracts:build` · `cd adapters/windows && uv run pytest tests/test_contracts_conformance.py -q` · `cd grounding && uv run pytest tests/test_contracts_conformance.py -q` |
-| **P2-B Evaluation core** | ✅ done (smoke scale) | `npm run eval -- replay --bundle test/fixtures/trace-bundle --runner recorded` · `npm run eval -- replay --bundle test/fixtures/trace-bundle --runner recorded --dataset w1-smoke` · `npm run eval -- compare --dataset w1-smoke --configs synthetic-deterministic,synthetic-b` |
-| **Release verifier** | ✅ done (fixture level) | `npm run release:verify -- --manifest test/fixtures/release/good/release.json` |
-| **W-1 workbook corpus** | ✅ done (synthetic) | `python3 test/fixtures/w1/generate.py && npx vitest run test/fixtures-w1.test.ts` |
+| **P0-A Toolchain** | ✅ reproducible locally | `npm run check` · `npm run build` |
+| **P0-B Contracts** | ⚠️ producer side only (host decoder report missing; E01/T01 open) | `npm run contracts:check` · `npm run contracts:build` · `cd adapters/windows && uv run pytest tests/test_contracts_conformance.py -q` · `cd grounding && uv run pytest tests/test_contracts_conformance.py -q` |
+| **P2-B Evaluation core** | ⚠️ smoke scale only (reference/ONNX replay open; T05) | `npm run eval -- replay --bundle test/fixtures/trace-bundle --runner recorded` · `npm run eval -- replay --bundle test/fixtures/trace-bundle --runner recorded --dataset w1-smoke` · `npm run eval -- compare --dataset w1-smoke --configs synthetic-deterministic,synthetic-b` |
+| **Release verifier** | ⚠️ candidate gates only (E01–E09 open; `qualified` unreachable on unpinned locks) | `npm run release:verify -- --manifest test/fixtures/release/good/release.json` |
+| **W-1 workbook corpus** | ⚠️ synthetic only (native/vision families open; T06) | `python3 test/fixtures/w1/generate.py && npx vitest run test/fixtures-w1.test.ts` |
 
 ## Spike and delivery packages — OPEN (hardware-gated)
 

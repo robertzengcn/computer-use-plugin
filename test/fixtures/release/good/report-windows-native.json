@@ -5,7 +5,13 @@
     "datasetId": "w1-smoke",
     "datasetVersion": "0.1.0",
     "runnerKind": "native-controlled",
-    "runnerLabel": "controlled native harness (candidate)"
+    "runnerLabel": "controlled native harness (candidate)",
+    "sourceCommit": "abc1234",
+    "provider": "cpu",
+    "timestamp": "2026-10-11T00:00:00Z",
+    "hardware": "generic-x64",
+    "artifactDigest": "7495382d2927bee37553c1604898509b1fd2c7bd55837f6fccfa97e7cbf791b1",
+    "consumerBuild": "aifetchly-host-0.1.0"
   },
   "configuration": {
     "modelConfigurationId": "gui-actor-2b-fp16@0.1.0",

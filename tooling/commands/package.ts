@@ -7,11 +7,12 @@
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { copyFile, mkdir, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { isAbsolute, join, relative } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { CommandResult } from '../cli.js';
 import { sha256File } from '../release/hash.js';
+import { publishStaging, stagingFor } from '../release/publish.js';
 
 interface TargetPlan {
   readonly lockPath: string;
@@ -85,23 +86,47 @@ function validateUpstreamLockShape(
   return undefined;
 }
 
-async function copyTree(source: string, target: string, prefix: string): Promise<string[]> {
+async function copyTree(source: string, target: string, prefix: string, repoAnchor: string): Promise<string[]> {
   const copied: string[] = [];
   await mkdir(target, { recursive: true });
   const entries = await readdir(source, { withFileTypes: true });
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     const rel = prefix.length === 0 ? entry.name : `${prefix}/${entry.name}`;
+    // N07: hostile checkout filenames (e.g. backslash spellings) never
+    // escape the staging tree.
+    if (rel.split('/').includes('..') || rel.split('\\').includes('..')) {
+      throw new Error(`refusing to stage escaping path: ${rel}`);
+    }
     if (isExcludedDeliverable(rel, entry.isDirectory())) {
       continue;
     }
+    // E09: symlinks are never staged silently. A link resolving inside the
+    // repository is materialized (copied bytes match the manifest hash); a
+    // link escaping the repository fails the build instead of omitting the
+    // file while required-path checks still see it.
+    if (entry.isSymbolicLink()) {
+      const realTarget = await realpath(join(source, entry.name)).catch(() => undefined);
+      const relToRepo = realTarget === undefined ? '..' : relative(repoAnchor, realTarget);
+      if (realTarget === undefined || escapesRepo(relToRepo)) {
+        throw new Error(`refusing to stage escaping symlink: ${rel}`);
+      }
+      await copyFile(join(source, entry.name), join(target, entry.name));
+      copied.push(rel);
+      continue;
+    }
     if (entry.isDirectory()) {
-      copied.push(...(await copyTree(join(source, entry.name), join(target, entry.name), rel)));
+      copied.push(...(await copyTree(join(source, entry.name), join(target, entry.name), rel, repoAnchor)));
     } else if (entry.isFile()) {
       await copyFile(join(source, entry.name), join(target, entry.name));
       copied.push(rel);
     }
   }
   return copied;
+}
+
+/** True when a repo-relative path escapes the repository. */
+function escapesRepo(rel: string): boolean {
+  return rel === '' || rel.startsWith('..') || isAbsolute(rel);
 }
 
 // E03: development caches/bytecode are never deliverables. Excluded
@@ -201,16 +226,29 @@ export async function packageBuild(
     }
   }
 
-  // B07: build into a fresh staging directory and swap atomically so stale
-  // files from earlier builds can never survive in the closure.
+  // B07: build into a fresh staging directory. N08: unique staging per
+  // call, and recoverable publication below — staging failures clean only
+  // their own staging and preserve the previous packageDir.
   const packageDir = join(outRoot, `package-${target}-${lock.selectedRevision.slice(0, 10)}`);
-  const stagingDir = `${packageDir}.staging`;
-  await rm(stagingDir, { recursive: true, force: true });
-  await rm(packageDir, { recursive: true, force: true });
+  const stagingDir = stagingFor(packageDir);
   await mkdir(stagingDir, { recursive: true });
 
   const included: { path: string; role: string; sha256: string; bytes: number }[] = [];
+  // N07: every staged path is containment-checked before any directory is
+  // created or file is copied — traversal segments (including backslash
+  // spellings from hostile checkout filenames) never escape staging.
+  const checkStagedPath = (relative: string): string | undefined => {
+    const normalized = relative.replaceAll('\\', '/');
+    if (isAbsolute(normalized) || normalized.split('/').includes('..') || normalized.length === 0) {
+      return `refusing to stage escaping path: ${relative}`;
+    }
+    return undefined;
+  };
   const addFile = async (relative: string, role: string): Promise<boolean> => {
+    const rejected = checkStagedPath(relative);
+    if (rejected !== undefined) {
+      throw new Error(rejected);
+    }
     const absolute = join(repoRoot, relative);
     if (!(await fileExists(absolute))) {
       return false;
@@ -228,23 +266,36 @@ export async function packageBuild(
   };
 
   for (const relative of COMMON_PLUGIN_FILES) {
-    if (!(await addFile(relative, 'plugin'))) {
-      return {
-        outcome: 'failed',
-        message: `common plugin file missing: ${relative}`,
-      };
+    try {
+      if (!(await addFile(relative, 'plugin'))) {
+        await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+        return {
+          outcome: 'failed',
+          message: `common plugin file missing: ${relative}`,
+        };
+      }
+    } catch (error) {
+      await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+      return { outcome: 'failed', message: `staging rejected: ${(error as Error).message}` };
     }
   }
   for (const relative of plan.envFiles) {
-    if (!(await addFile(relative, 'env-input'))) {
-      return {
-        outcome: 'failed',
-        message: `target environment input missing: ${relative} (run the spike pin first)`,
-      };
+    try {
+      if (!(await addFile(relative, 'env-input'))) {
+        await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+        return {
+          outcome: 'failed',
+          message: `target environment input missing: ${relative} (run the spike pin first)`,
+        };
+      }
+    } catch (error) {
+      await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+      return { outcome: 'failed', message: `staging rejected: ${(error as Error).message}` };
     }
   }
   for (const required of plan.requiredPaths) {
     if (!(await fileExists(join(repoRoot, required))) || !(await fileExists(join(repoRoot, 'adapters', 'windows', 'pyproject.toml')))) {
+      await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
       return {
         outcome: 'failed',
         message: `runnable backend source missing: ${required} — a pinned lock without the package is not a deliverable (B06)`,
@@ -255,12 +306,22 @@ export async function packageBuild(
   // launchable through the declared profile (B06).
   // E03: every delivered backend byte is enumerated in files/roles/sizes/digest;
   // changing any delivered source changes the digest.
+  // N07/E09: tree copies are containment- and symlink-checked inside
+  // copyTree; failures clean staging and preserve the previous candidate.
+  const repoAnchor = await realpath(repoRoot).catch(() => repoRoot);
   if (target === 'win32-x64') {
-    const srcCopied = await copyTree(
-      join(repoRoot, 'adapters', 'windows', 'src'),
-      join(stagingDir, 'adapters', 'windows', 'src'),
-      '',
-    );
+    let srcCopied: string[];
+    try {
+      srcCopied = await copyTree(
+        join(repoRoot, 'adapters', 'windows', 'src'),
+        join(stagingDir, 'adapters', 'windows', 'src'),
+        '',
+        repoAnchor,
+      );
+    } catch (error) {
+      await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+      return { outcome: 'failed', message: `staging rejected: ${(error as Error).message}` };
+    }
     for (const rel of srcCopied) {
       const repoRel = `adapters/windows/src/${rel}`;
       const absolute = join(repoRoot, repoRel);
@@ -275,7 +336,14 @@ export async function packageBuild(
   // Skills tree may hold more than the known file; copy anything extra.
   const skillsDir = join(repoRoot, 'plugin', 'skills');
   if (await fileExists(skillsDir)) {
-    for (const extra of await copyTree(skillsDir, join(stagingDir, 'plugin', 'skills'), '')) {
+    let extraCopied: string[];
+    try {
+      extraCopied = await copyTree(skillsDir, join(stagingDir, 'plugin', 'skills'), '', repoAnchor);
+    } catch (error) {
+      await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+      return { outcome: 'failed', message: `staging rejected: ${(error as Error).message}` };
+    }
+    for (const extra of extraCopied) {
       const absolute = join(skillsDir, extra);
       if (!included.some((entry) => entry.path === `plugin/skills/${extra}`)) {
         included.push({
@@ -309,9 +377,12 @@ export async function packageBuild(
         : 'windows environment integrity is covered by lock hashes; code signing is not claimed'),
   };
   await writeFile(join(stagingDir, 'package-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  // B07: finalize atomically — the published directory either fully appears
-  // or stays absent; it never contains a partial or stale mixture.
-  await rename(stagingDir, packageDir);
+  // N08: recoverable publish — previous packageDir moved aside, restored on
+  // final-rename failure instead of deleted.
+  const published = await publishStaging(stagingDir, packageDir);
+  if (published.outcome !== 'ok') {
+    return { outcome: 'failed', message: `package ${published.message}` };
+  }
 
   return {
     outcome: 'ok',

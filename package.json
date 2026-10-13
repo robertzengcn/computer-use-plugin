@@ -21,6 +21,7 @@
     "model:parity": "node dist/tooling/cli.js model:parity",
     "eval": "node dist/eval/cli.js",
     "package:build": "node dist/tooling/cli.js package:build",
+    "release:assemble": "node dist/tooling/cli.js release:assemble",
     "release:verify": "node dist/tooling/cli.js release:verify"
   },
   "devDependencies": {

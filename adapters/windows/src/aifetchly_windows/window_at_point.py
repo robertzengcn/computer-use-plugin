@@ -16,6 +16,13 @@ class WindowAtPointError(Exception):
     """Typed failure resolving the window at a desktop point."""
 
 
+# Win32 LONG bounds for desktop coordinates (B04). Negative values are
+# valid (multi-monitor layouts left/above the primary display).
+LONG_MIN = -(2**31)
+LONG_MAX = 2**31 - 1
+DWORD_MAX = 0xFFFFFFFF
+
+
 @dataclass(frozen=True)
 class DesktopPoint:
     x: int
@@ -27,7 +34,8 @@ class WindowAtPointResult:
     point: DesktopPoint
     window_handle: int
     process_id: int
-    is_own_process: bool = False
+    # None means unknown ownership (no trusted owner supplied, B03).
+    is_own_process: bool | None = None
 
 
 class WindowApi(Protocol):
@@ -101,9 +109,21 @@ def resolve_window_at_point(
     api: WindowApi,
     own_process_id: int | None = None,
 ) -> WindowAtPointResult:
-    """Resolve the top-level window and owning PID at a desktop point."""
-    if not isinstance(point.x, int) or not isinstance(point.y, int):
-        raise WindowAtPointError("point coordinates must be integers")
+    """Resolve the top-level window and owning PID at a desktop point.
+
+    Rejects booleans/non-integers and LONG-overflowing coordinates before
+    any native call (B04); valid negative desktop coordinates are retained.
+    Ownership is only reported with a trusted owner PID (B03).
+    """
+    if type(point.x) is not int or type(point.y) is not int:
+        raise WindowAtPointError("point coordinates must be integers (booleans rejected)")
+    for value in (point.x, point.y):
+        if value < LONG_MIN or value > LONG_MAX:
+            raise WindowAtPointError(f"point coordinate {value} outside LONG range {LONG_MIN}..{LONG_MAX}")
+    if own_process_id is not None and (
+        type(own_process_id) is not int or own_process_id < 0 or own_process_id > DWORD_MAX
+    ):
+        raise WindowAtPointError("owner process id outside DWORD range")
     try:
         window = api.window_from_point(point)
     except WindowAtPointError:
@@ -123,5 +143,5 @@ def resolve_window_at_point(
         point=point,
         window_handle=root,
         process_id=process_id,
-        is_own_process=own_process_id == process_id,
+        is_own_process=(own_process_id == process_id) if own_process_id is not None else None,
     )

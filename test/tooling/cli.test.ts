@@ -6,7 +6,7 @@ import {
   parseArgs,
   type CliOutcome,
 } from '../../tooling/cli.js';
-import { COMMANDS, commandByName } from '../../tooling/commands.js';
+import { COMMANDS, commandByName, resolveSourceCommit } from '../../tooling/commands.js';
 
 describe('parseArgs', () => {
   it.each([
@@ -118,6 +118,45 @@ describe('command registry', () => {
     );
     expect(result.outcome).toBe('missingPrerequisites');
     expect(result.message).toMatch(/model:prepare|weights|spike/i);
+  });
+});
+
+describe('resolveSourceCommit (E06 dirty-tree policy)', () => {
+  const cleanGit = (args: readonly string[]): string => {
+    if (args[0] === 'status') return '';
+    if (args[0] === 'rev-parse') return 'abc1234';
+    throw new Error('unexpected git call');
+  };
+  const dirtyGit = (args: readonly string[]): string => {
+    if (args[0] === 'status') return ' M foo.ts\n';
+    if (args[0] === 'rev-parse') return 'abc1234';
+    throw new Error('unexpected git call');
+  };
+  const noGit = (_args: readonly string[]): string => {
+    throw new Error('not a git checkout');
+  };
+
+  it('rejects a false -dirty claim on a known-clean tree', () => {
+    const result = resolveSourceCommit('abc1234-dirty', true, cleanGit);
+    expect(result.outcome).toBe('invalidArgs');
+    if (result.outcome !== 'invalidArgs') throw new Error('expected invalidArgs');
+    expect(result.message).toMatch(/claims a dirty tree/);
+  });
+
+  it('requires --allow-dirty on a dirty tree, even with an explicit commit', () => {
+    const refused = resolveSourceCommit('abc1234', false, dirtyGit);
+    expect(refused.outcome).toBe('missingPrerequisites');
+    if (refused.outcome !== 'missingPrerequisites') throw new Error('expected missingPrerequisites');
+    expect(refused.message).toMatch(/--allow-dirty/);
+    const recorded = resolveSourceCommit('abc1234', true, dirtyGit);
+    expect(recorded).toEqual({ outcome: 'ok', sourceCommit: 'abc1234-dirty' });
+  });
+
+  it('records a clean explicit commit verbatim and probes HEAD otherwise', () => {
+    expect(resolveSourceCommit('abc1234', false, cleanGit)).toEqual({ outcome: 'ok', sourceCommit: 'abc1234' });
+    expect(resolveSourceCommit(undefined, false, cleanGit)).toEqual({ outcome: 'ok', sourceCommit: 'abc1234' });
+    expect(resolveSourceCommit(undefined, false, noGit).outcome).toBe('missingPrerequisites');
+    expect(resolveSourceCommit('abc1234', false, noGit)).toEqual({ outcome: 'ok', sourceCommit: 'abc1234' });
   });
 });
 

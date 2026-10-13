@@ -1,4 +1,26 @@
 {
   "version": 1,
-  "transport": "stdio-jsonrpc"
+  "transport": "stdio-jsonrpc",
+  "argvTemplate": [
+    "<managed-python>",
+    "-u",
+    "-m",
+    "aifetchly_windows.entrypoint"
+  ],
+  "cwd": "<managed-env-root>",
+  "envPolicy": {
+    "inherit": [
+      "SYSTEMROOT",
+      "TEMP",
+      "TMP",
+      "SYSTEMDRIVE"
+    ],
+    "telemetry": "disabled",
+    "noGlobalPath": true,
+    "extra": {
+      "PYTHONUNBUFFERED": "1"
+    }
+  },
+  "stdoutPolicy": "protocol-only",
+  "upstreamLockRequired": "pinned"
 }
